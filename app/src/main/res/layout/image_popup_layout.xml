@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/image_popup"
+    android:background="@drawable/toolbar_transparent"
+    android:orientation="vertical"
+    android:layout_width="250dp"
+    android:layout_height="350dp">
+
+    <RelativeLayout
+        android:id="@+id/compound_layout"
+        android:layout_width="237dp"
+        android:background="@color/colorWhite"
+        android:layout_alignParentBottom="true"
+        android:layout_height="337dp">
+
+        <ImageView
+            android:id="@+id/full_status_image_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <com.google.android.exoplayer2.ui.SimpleExoPlayerView
+            android:id="@+id/full_status_video_view"
+            android:visibility="gone"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+    </RelativeLayout>
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/close_image_popup_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        app:fabSize="mini"
+        app:srcCompat="@android:drawable/ic_menu_close_clear_cancel"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+</RelativeLayout>

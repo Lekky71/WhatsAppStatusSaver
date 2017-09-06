@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <!--android:focusable="true"-->
+    <!--android:clickable="true"-->
+    <!--android:focusableInTouchMode="true"-->
+    <!--android:background="@drawable/status_selector">-->
+    <android.support.v7.widget.CardView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp">
+        <ImageView
+            android:id="@+id/status_image"
+            android:layout_width="180dp"
+            android:layout_height="180dp" />
+        <VideoView
+            android:id="@+id/status_video"
+            android:visibility="gone"
+            android:layout_width="180dp"
+            android:layout_height="180dp" />
+
+        <ImageView
+            android:id="@+id/video_play_button"
+            android:layout_width="60dp"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:layout_height="60dp"
+            android:src="@android:drawable/ic_media_play" />
+    </android.support.v7.widget.CardView>
+</FrameLayout>
