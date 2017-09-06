@@ -6,10 +6,12 @@ import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.VideoView;
 
@@ -23,9 +25,10 @@ import java.util.ArrayList;
  * Created by oluwalekefakorede on 06/09/2017.
  */
 
-public class StatusListAdapter extends ArrayAdapter<String> {
+public class StatusListAdapter extends ArrayAdapter<String> implements CompoundButton.OnCheckedChangeListener {
     private ArrayList<String> statusPaths;
     private Context mContext;
+    private SparseBooleanArray mCheckStates;
 
     public void setSelectedStatuses(ArrayList<String> selectedStatuses) {
         this.selectedStatuses = selectedStatuses;
@@ -42,11 +45,18 @@ public class StatusListAdapter extends ArrayAdapter<String> {
         mContext = context;
         statusPaths = statuses;
         selectedStatuses = new ArrayList<>();
+        mCheckStates = new SparseBooleanArray(statuses.size());
     }
 
     public void setStatusClickListener(StatusClickListener statusClickListener) {
         this.statusClickListener = statusClickListener;
     }
+
+    @Override
+    public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+
+    }
+
     public interface StatusClickListener{
         void onStatusLongClick(int position, String url);
     }
@@ -68,7 +78,7 @@ public class StatusListAdapter extends ArrayAdapter<String> {
     public View getView(final int position, @Nullable View convertView, @NonNull ViewGroup parent) {
         LayoutInflater inflater = (LayoutInflater) mContext
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View itemView = inflater.inflate(R.layout.each_status_view, parent, false);
+        final View itemView = inflater.inflate(R.layout.each_status_view, parent, false);
         Log.e("Loading the vies", "It did so");
         ImageView statusImageView = (ImageView) itemView.findViewById(R.id.status_image);
         VideoView statusVideoView = itemView.findViewById(R.id.status_video);
@@ -96,26 +106,27 @@ public class StatusListAdapter extends ArrayAdapter<String> {
                     .into(statusImageView);
         }
         itemView.setTag(fullStatusPath);
-        if(getSelectedStatuses().contains(fullStatusPath)){
-//            itemView.setSelected(true);
+
+        if(mCheckStates.get(position, false)){
             itemView.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
         }
-        else {
-            itemView.setBackground(null);
-        }
+
         itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Log.i("Selecting image","it works");
 
-                if(v.isSelected()){
-                    v.setSelected(false);
-                    v.setBackground(null);
+                if(mCheckStates.get(position,false)){
                     selectedStatuses.remove(fullStatusPath);
+                    Log.e("Selection","It saw it as selected");
+                    v.setBackground(null);
+                    mCheckStates.delete(position);
+//                    v.setBackground(null);
                 }else{
-                    v.setSelected(true);
+//                    v.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
                     v.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
                     selectedStatuses.add(fullStatusPath);
+                    mCheckStates.put(position,true);
                 }
             }
         });

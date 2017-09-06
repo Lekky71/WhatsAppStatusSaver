@@ -7,13 +7,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Color;
 import android.graphics.Point;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.media.session.MediaController;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -21,12 +16,9 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ShareCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Menu;
@@ -34,16 +26,9 @@ import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ListView;
-import android.widget.PopupWindow;
-import android.widget.RelativeLayout;
-import android.widget.VideoView;
 
-import com.bumptech.glide.Glide;
 import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.LoadControl;
@@ -63,15 +48,11 @@ import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 import com.hashcode.whatsappstatussaver.data.StatusSavingService;
 import com.hashcode.whatsappstatussaver.views.GlideApp;
-import com.hashcode.whatsappstatussaver.views.StatusAdapter;
 import com.hashcode.whatsappstatussaver.views.StatusListAdapter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener, StatusListAdapter.StatusClickListener{
-//    StatusAdapter statusAdapter;
-    RecyclerView mRecyclerView;
     Context mContext;
     ArrayList<String> allStatusPaths;
     ArrayList<String> selectedStatuses;
@@ -102,7 +83,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         mContext = getBaseContext();
         allStatusPaths = new ArrayList<>();
         selectedStatuses = new ArrayList<>();
-//        mRecyclerView = (RecyclerView) findViewById(R.id.all_status_recycler_view);
         mGridView = (GridView) findViewById(R.id.status_grid_view);
         mGridView.setColumnWidth(3);
 
@@ -114,10 +94,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 //        statusAdapter.setStatusClickListener(this);
 
         statusListAdapter.setStatusClickListener(this);
-//        mRecyclerView.setHasFixedSize(true);
-//        mRecyclerView.setAdapter(statusAdapter);
-//        mGridView.setAdapter(statusListAdapter);
-//        mRecyclerView.setLayoutManager(new GridLayoutManager(mContext,3));
+
         //Button to save the statuses.
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
