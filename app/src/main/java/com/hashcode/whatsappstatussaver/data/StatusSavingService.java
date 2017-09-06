@@ -32,14 +32,11 @@ public class StatusSavingService extends IntentService {
 
     private static final String TAG = StatusSavingService.class.getSimpleName();
 
-// /mnt/shell/emulated/0/WhatsApp/Media/.Statuses
 
     public final static String FETCHED_STATUSES = "fetched-statuses";
     public static final String SELECTED_STATUSES = "selected-statuses";
     public static String FOLDER_PATH ="folder-path";
 
-    //   /storage/sdcard0/WhatsApp/Media/.Statuses
-    // whatsapp://send?text=
     public StatusSavingService(){
         super(TAG);
 
@@ -58,37 +55,34 @@ public class StatusSavingService extends IntentService {
     }
 
     private void fetchAllStatus(){
-        String state = Environment.getExternalStorageState();
-        String folderPath = "/storage/sdcard0/WhatsApp/Media/.Statuses";
         String foldPath = new StringBuffer().append(Environment.getExternalStorageDirectory()
                 .getAbsolutePath()).append("/WhatsApp/Media/.Statuses/").toString();
 
-
-
         File f = new File(foldPath);
         if(f.exists()){
-            Log.d("the whatsapp folder", "yes existence");
+        }
+        else{
+            Intent broadcastIntent = new Intent();
+            broadcastIntent.setAction(MainActivity.FetchStatusReceiver.PROCESS_FETCH);
+            broadcastIntent.addCategory(Intent.CATEGORY_DEFAULT);
+            broadcastIntent.putExtra("the-user-has-whatsapp",false);
+            sendBroadcast(broadcastIntent);
         }
 
         if(f.setReadable(true)){
-            Log.d("the whatsapp folder", "yes can read from");
         }
         File files[] = f.listFiles();
         Arrays.sort(files, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
-        Log.d("Files", "Size: "+ files.length);
         ArrayList<String> statuses = new ArrayList<>();
         for (int i=0; i < files.length; i++){
             statuses.add(files[i].getName());
             //here populate your listview
-            Log.d("Files", "FileName:" + files[i].getName());
         }
         sendFetchBroadCast(statuses,foldPath);
     }
 
 
     private void saveAllSelectedStatus(ArrayList<String> statuses){
-//        String externalPath = Environment.getExternalStorageDirectory().toString()+"/Pictures";
-//        String internalPath = "storage/emulated/0";
         String fileType = Environment.DIRECTORY_PICTURES;
         for(String status : statuses){
             if(status.endsWith(".jpg")){
@@ -99,7 +93,6 @@ public class StatusSavingService extends IntentService {
                 fileType="Videos";
             }
             String [] splitStatus = status.split("/");
-//            savefile(Uri.parse(status),fileType,splitStatus[splitStatus.length-1]);
             String destinationFilename = android.os.Environment.getExternalStorageDirectory().getAbsolutePath()
                     +"/WhatsAppSaver"+File.separatorChar+splitStatus[splitStatus.length-1];
             try {
@@ -110,9 +103,6 @@ public class StatusSavingService extends IntentService {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            Log.e("Saving images ","saved image url "+status);
-
-            Log.e("Saving images ","saved image "+splitStatus[splitStatus.length-1]);
         }
     }
 
@@ -134,36 +124,6 @@ public class StatusSavingService extends IntentService {
         broadcastIntent.putExtra(FOLDER_PATH,folderPath);
         broadcastIntent.putExtra(FETCHED_STATUSES,statuses);
         sendBroadcast(broadcastIntent);
-    }
-
-    void savefile(Uri sourceuri, String fileType, String filename)
-    {
-        String sourceFilename= sourceuri.getPath();
-        String destinationFilename = android.os.Environment.getExternalStorageDirectory().getAbsolutePath()
-                +"/WhatsAppSaver"+File.separatorChar+filename;
-        Log.e("Saving images ","saved image directory "+destinationFilename);
-
-        BufferedInputStream bis = null;
-        BufferedOutputStream bos = null;
-
-        try {
-            bis = new BufferedInputStream(new FileInputStream(sourceFilename));
-            bos = new BufferedOutputStream(new FileOutputStream(destinationFilename, false));
-            byte[] buf = new byte[1024];
-            bis.read(buf);
-            do {
-                bos.write(buf);
-            } while(bis.read(buf) != -1);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (bis != null) bis.close();
-                if (bos != null) bos.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
     }
 
 

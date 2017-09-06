@@ -1,5 +1,6 @@
 package com.hashcode.whatsappstatussaver;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.BroadcastReceiver;
@@ -7,27 +8,30 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ShareCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.ExoPlayerFactory;
@@ -57,6 +61,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     ArrayList<String> allStatusPaths;
     ArrayList<String> selectedStatuses;
     SwipeRefreshLayout swipeRefreshLayout;
+    final int MY_PERMISSION_REQUEST_WRITE_STORAGE = 100;
 
     //Using ListView
     GridView mGridView;
@@ -114,7 +119,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             }
         });
         swipeRefreshLayout.setOnRefreshListener(this);
-        StatusSavingService.performFetch(mContext);
+        askForContactPermission();
+
     }
 
     @Override
@@ -173,27 +179,25 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         public static final String PROCESS_FETCH = "setup-all-views";
         @Override
         public void onReceive(Context context, Intent intent) {
-            ArrayList<String> receivedStatus = intent.getStringArrayListExtra(StatusSavingService.FETCHED_STATUSES);
-            statusListAdapter.setFolderPath(intent.getStringExtra(StatusSavingService.FOLDER_PATH));
-            if(receivedStatus.size() > 5){
-                Log.e("Received Status", "it received status");
+            boolean hasWhatsApp = intent.getBooleanExtra("the-user-has-whatsapp",true);
+            if(!hasWhatsApp){
+                Snackbar.make(mGridView,"Sorry, you do not have WhatsApp Installed",Snackbar.LENGTH_LONG).show();
             }
+            else {
+                ArrayList<String> receivedStatus = intent.getStringArrayListExtra(StatusSavingService.FETCHED_STATUSES);
+                statusListAdapter.setFolderPath(intent.getStringExtra(StatusSavingService.FOLDER_PATH));
 //            statusListAdapter.swapStatus(receivedStatus);
-            mGridView.setAdapter(statusListAdapter);
-            statusListAdapter.swapStatus(receivedStatus);
-            //Setting up the recycler view
-            swipeRefreshLayout.setRefreshing(false);
+                mGridView.setAdapter(statusListAdapter);
+                statusListAdapter.swapStatus(receivedStatus);
+                //Setting up the recycler view
+                swipeRefreshLayout.setRefreshing(false);
+            }
         }
     }
 
 
     private void showHelpPopup(final Activity context, Point p) {
         // Inflate the popup_layout.xml
-        LayoutInflater layoutInflater = (LayoutInflater) context
-                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        View layout = layoutInflater.inflate(R.layout.help_popup_layout, (ViewGroup)findViewById(R.id.help_popup));
-
-
         final Dialog dialog = new Dialog(context);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.help_popup_layout);
@@ -301,4 +305,35 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     }
 
+
+    public void askForContactPermission(){
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            int permissionCheck = ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            if(permissionCheck != PackageManager.PERMISSION_GRANTED){
+                ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MY_PERMISSION_REQUEST_WRITE_STORAGE);
+
+            }else{
+                StatusSavingService.performFetch(mContext);
+            }
+        }
+        else{
+            StatusSavingService.performFetch(mContext);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode){
+            case MY_PERMISSION_REQUEST_WRITE_STORAGE:
+                if(grantResults.length>0 && grantResults[0]==PackageManager.PERMISSION_GRANTED){
+                    StatusSavingService.performFetch(mContext);
+                }
+                else {
+                    Toast.makeText(getBaseContext(),"Sorry, This app cannot work on your device",Toast.LENGTH_LONG).show();
+                    startActivity(new Intent(this,MainActivity.class));
+                    finish();
+                }
+                return;
+        }
+    }
 }
