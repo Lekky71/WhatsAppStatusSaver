@@ -1,4 +1,4 @@
-package com.hashcode.whatsappstatussaver;
+package com.hashcode.whatsstatussaver;
 
 import org.junit.Test;
 

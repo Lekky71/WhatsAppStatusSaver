@@ -1,4 +1,4 @@
-package com.hashcode.whatsappstatussaver.data;
+package com.hashcode.whatsstatussaver.data;
 
 import android.app.IntentService;
 import android.content.Context;
@@ -6,18 +6,14 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Environment;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
-import com.hashcode.whatsappstatussaver.MainActivity;
+import com.hashcode.whatsstatussaver.MainActivity;
 
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -1,4 +1,4 @@
-package com.hashcode.whatsappstatussaver.data;
+package com.hashcode.whatsstatussaver.data;
 
 /**
  * Created by oluwalekefakorede on 04/09/2017.

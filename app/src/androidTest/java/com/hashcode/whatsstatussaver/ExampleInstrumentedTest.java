@@ -1,4 +1,4 @@
-package com.hashcode.whatsappstatussaver;
+package com.hashcode.whatsstatussaver;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;

@@ -1,4 +1,4 @@
-package com.hashcode.whatsappstatussaver.views;
+package com.hashcode.whatsstatussaver.views;
 
 /**
  * Created by oluwalekefakorede on 03/09/2017.

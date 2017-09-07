@@ -1,4 +1,4 @@
-package com.hashcode.whatsappstatussaver.data;
+package com.hashcode.whatsstatussaver.data;
 
 import java.io.File;
 import java.io.Serializable;

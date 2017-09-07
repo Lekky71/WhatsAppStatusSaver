@@ -6,7 +6,7 @@ android {
     compileSdkVersion 26
     buildToolsVersion '26.0.1'
     defaultConfig {
-        applicationId "com.hashcode.whatsappstatussaver"
+        applicationId "com.hashcode.whatsstatussaver"
         minSdkVersion 16
         targetSdkVersion 26
         versionCode 3

@@ -1,4 +1,4 @@
-package com.hashcode.whatsappstatussaver;
+package com.hashcode.whatsstatussaver;
 
 import android.Manifest;
 import android.app.Activity;
@@ -22,7 +22,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -50,9 +49,9 @@ import com.google.android.exoplayer2.upstream.BandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
-import com.hashcode.whatsappstatussaver.data.StatusSavingService;
-import com.hashcode.whatsappstatussaver.views.GlideApp;
-import com.hashcode.whatsappstatussaver.views.StatusListAdapter;
+import com.hashcode.whatsstatussaver.data.StatusSavingService;
+import com.hashcode.whatsstatussaver.views.GlideApp;
+import com.hashcode.whatsstatussaver.views.StatusListAdapter;
 
 import java.util.ArrayList;
 

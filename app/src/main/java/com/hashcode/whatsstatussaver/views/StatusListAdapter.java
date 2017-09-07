@@ -1,4 +1,4 @@
-package com.hashcode.whatsappstatussaver.views;
+package com.hashcode.whatsstatussaver.views;
 
 import android.content.Context;
 import android.graphics.Color;
@@ -16,7 +16,7 @@ import android.widget.ImageView;
 import android.widget.VideoView;
 
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.hashcode.whatsappstatussaver.R;
+import com.hashcode.whatsstatussaver.R;
 
 import java.io.File;
 import java.util.ArrayList;

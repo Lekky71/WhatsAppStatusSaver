@@ -1,4 +1,4 @@
-package com.hashcode.whatsappstatussaver;
+package com.hashcode.whatsstatussaver;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
