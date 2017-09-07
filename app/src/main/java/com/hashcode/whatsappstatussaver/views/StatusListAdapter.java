@@ -28,7 +28,7 @@ import java.util.ArrayList;
 public class StatusListAdapter extends ArrayAdapter<String> implements CompoundButton.OnCheckedChangeListener {
     private ArrayList<String> statusPaths;
     private Context mContext;
-    private SparseBooleanArray mCheckStates;
+    public SparseBooleanArray mCheckStates;
 
     public void setSelectedStatuses(ArrayList<String> selectedStatuses) {
         this.selectedStatuses = selectedStatuses;
@@ -130,7 +130,6 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
                 }
             }
         });
-
 
         itemView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override

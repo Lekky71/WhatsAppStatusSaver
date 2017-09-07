@@ -39,7 +39,6 @@ public class StatusSavingService extends IntentService {
 
     public StatusSavingService(){
         super(TAG);
-
     }
 
     @Override

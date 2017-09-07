@@ -15,27 +15,10 @@ import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.ViewFlipper;
 
-/**
- * An example full-screen activity that shows and hides the system UI (i.e.
- * status bar and navigation/system bar) with user interaction.
- */
+
 public class IntroActivity extends AppCompatActivity {
-    /**
-     * Whether or not the system UI should be auto-hidden after
-     * {@link #AUTO_HIDE_DELAY_MILLIS} milliseconds.
-     */
     private static final boolean AUTO_HIDE = true;
-
-    /**
-     * If {@link #AUTO_HIDE} is set, the number of milliseconds to wait after
-     * user interaction before hiding the system UI.
-     */
     private static final int AUTO_HIDE_DELAY_MILLIS = 3000;
-
-    /**
-     * Some older devices needs a small delay between UI widget updates
-     * and a change of the status and navigation bar.
-     */
     private static final int UI_ANIMATION_DELAY = 300;
     private final Handler mHideHandler = new Handler();
     private View mContentView;
@@ -113,7 +96,7 @@ public class IntroActivity extends AppCompatActivity {
                         public void run() {
                             startActivity(new Intent(IntroActivity.this,MainActivity.class));
                         }
-                    }, 10000L);
+                    }, 15000L);
         }
         else {
             startActivity(new Intent(IntroActivity.this,MainActivity.class));
@@ -146,12 +129,10 @@ public class IntroActivity extends AppCompatActivity {
         simpleViewFlipper.setInAnimation(in);
         simpleViewFlipper.setOutAnimation(out);
         // set interval time for flipping between views
-        simpleViewFlipper.setFlipInterval(2000);
+        simpleViewFlipper.setFlipInterval(3000);
         // set auto start for flipping between views
         simpleViewFlipper.setAutoStart(true);
 
-
-//        startActivity(new Intent(IntroActivity.this,MainActivity.class));
     }
 
     @Override
@@ -198,10 +179,6 @@ public class IntroActivity extends AppCompatActivity {
         mHideHandler.postDelayed(mShowPart2Runnable, UI_ANIMATION_DELAY);
     }
 
-    /**
-     * Schedules a call to hide() in [delay] milliseconds, canceling any
-     * previously scheduled calls.
-     */
     private void delayedHide(int delayMillis) {
         mHideHandler.removeCallbacks(mHideRunnable);
         mHideHandler.postDelayed(mHideRunnable, delayMillis);

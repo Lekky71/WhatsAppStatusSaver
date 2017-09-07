@@ -67,7 +67,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     GridView mGridView;
     StatusListAdapter statusListAdapter;
 
-
     private final static String ACTION_FETCH_STATUS = "fetch-status";
     private final static String ACTION_SAVE_STATUS = "save-status";
 
@@ -90,16 +89,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         selectedStatuses = new ArrayList<>();
         mGridView = (GridView) findViewById(R.id.status_grid_view);
         mGridView.setColumnWidth(3);
-
-//        statusAdapter = new StatusAdapter(mContext,allStatusPaths);
-
         statusListAdapter = new StatusListAdapter(mContext,allStatusPaths);
 
-
-//        statusAdapter.setStatusClickListener(this);
-
         statusListAdapter.setStatusClickListener(this);
-
         //Button to save the statuses.
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -107,6 +99,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             public void onClick(View view) {
                 if(statusListAdapter.getSelectedStatuses().size() != 0){
                     StatusSavingService.performSave(mContext,statusListAdapter.getSelectedStatuses());
+                    statusListAdapter.mCheckStates.clear();
                     Snackbar.make(view, "Statuses saved", Snackbar.LENGTH_LONG).show();
                     statusListAdapter.setSelectedStatuses(new ArrayList<String>());
                     swipeRefreshLayout.setRefreshing(true);
