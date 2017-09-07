@@ -95,11 +95,13 @@ public class IntroActivity extends AppCompatActivity {
                     new Runnable() {
                         public void run() {
                             startActivity(new Intent(IntroActivity.this,MainActivity.class));
+                            finish();
                         }
                     }, 15000L);
         }
         else {
             startActivity(new Intent(IntroActivity.this,MainActivity.class));
+            finish();
         }
 
         mVisible = true;
