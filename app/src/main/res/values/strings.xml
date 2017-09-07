@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">WhatsAppStatusSaver</string>
+    <string name="app_name">WhatzApStatusSaver</string>
     <string name="action_refresh">Refresh</string>
     <string name="action_help">Help</string>
     <string name="help_text">This app shows you a good view of all your WhatsApp contacts status and helps you save them permanently.   You can simply tap the ones you want to save, then click the save button. You can also swipe up to refresh the list.  To view the image clearly, just hold on it.</string>
