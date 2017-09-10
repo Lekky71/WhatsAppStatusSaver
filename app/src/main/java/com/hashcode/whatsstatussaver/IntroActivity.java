@@ -100,6 +100,7 @@ public class IntroActivity extends AppCompatActivity {
         }
         else {
             startActivity(new Intent(IntroActivity.this,MainActivity.class));
+            finish();
         }
 
         mVisible = true;
