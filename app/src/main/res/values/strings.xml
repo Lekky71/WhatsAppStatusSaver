@@ -9,5 +9,7 @@
     <string name="title_activity_intro">IntroActivity</string>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="help">Help</string>
+    <string name="made_with_love_by_hashcode">Made with love by HashCode</string>
 
 </resources>
