@@ -328,4 +328,13 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 return;
         }
     }
+
+    /**
+     * If SelectedStatuses is not empty, clear the selected Views first and if empty, close the app.
+     * */
+    @Override
+    public void onBackPressed() {
+        if (statusListAdapter.getSelectedStatuses().size()==0) super.onBackPressed();
+        else statusListAdapter.clearSelectedStatused();
+    }
 }
