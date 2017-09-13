@@ -29,6 +29,7 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
     private ArrayList<String> statusPaths;
     private Context mContext;
     public SparseBooleanArray mCheckStates;
+    private ArrayList<View> viewArrayList=new ArrayList<>();
 
     public void setSelectedStatuses(ArrayList<String> selectedStatuses) {
         this.selectedStatuses = selectedStatuses;
@@ -122,11 +123,14 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
                     v.setBackground(null);
                     mCheckStates.delete(position);
 //                    v.setBackground(null);
+                    viewArrayList.remove(v);
+
                 }else{
 //                    v.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
                     v.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
                     selectedStatuses.add(fullStatusPath);
                     mCheckStates.put(position,true);
+                    viewArrayList.add(v);
                 }
             }
         });
@@ -154,6 +158,15 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
     @Override
     public int getCount() {
         return statusPaths.size();
+    }
+
+    public void clearSelectedStatused(){
+        for (View v:viewArrayList){
+            v.setBackground(null);
+        }
+        selectedStatuses.clear();
+        mCheckStates.clear();
+        notifyDataSetChanged();
     }
 
 }
