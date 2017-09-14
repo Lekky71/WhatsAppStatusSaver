@@ -139,7 +139,6 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
                     Log.e("Selection","It saw it as selected");
                     v.setBackground(null);
                     mPicturesCheckStates.delete(position);
-//                    v.setBackground(null);
                     viewArrayList.remove(v);
 
                 }

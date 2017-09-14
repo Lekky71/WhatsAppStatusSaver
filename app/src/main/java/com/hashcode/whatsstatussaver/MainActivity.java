@@ -23,6 +23,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.SparseBooleanArray;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -87,7 +88,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         fetchStatusReceiver = new FetchStatusReceiver();
         registerReceiver(fetchStatusReceiver, filter);
         swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.refresh_layout);
-        swipeRefreshLayout.setColorSchemeColors(getResources().getColor(R.color.colorAccent));
+        swipeRefreshLayout.setColorSchemeColors(getResources().getColor(R.color.colorAccent),
+                getResources().getColor(R.color.colorPrimary),
+                getResources().getColor(R.color.colorPrimaryDark));
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         mContext = getBaseContext();
@@ -133,7 +136,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 //                    navigation.setSelectedItemId(R.id.navigation_pictures);
                 }
                 else{
-                    Snackbar.make(navigation, "No status selected", Snackbar.LENGTH_SHORT).show();
+                    String typeMessage = navigation.getSelectedItemId() == R.id.navigation_pictures ?
+                            "No picture selected" : "No video selected";
+                    Snackbar.make(navigation, typeMessage, Snackbar.LENGTH_SHORT).show();
                 }
 
             }
@@ -184,7 +189,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     @Override
     public void onRefresh() {
         StatusSavingService.performFetch(mContext);
-
+        statusListAdapter.clearSelectedStatused();
     }
 
     @Override

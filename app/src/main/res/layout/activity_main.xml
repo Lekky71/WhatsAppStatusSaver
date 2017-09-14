@@ -38,6 +38,8 @@
             android:layout_alignParentRight="true" />
         <android.support.design.widget.BottomNavigationView
             android:id="@+id/main_bottom_navigation"
+            android:soundEffectsEnabled="true"
+            android:splitMotionEvents="true"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
