@@ -109,20 +109,31 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(statusListAdapter.getSelectedPicturesStatuses().size() != 0 ||
-                        statusListAdapter.getSelectedVidoesStatuses().size() != 0){
+                int numOfSelectedPic = statusListAdapter.getSelectedPicturesStatuses().size();
+                int numOfSelectedVideos = statusListAdapter.getSelectedVidoesStatuses().size();
+                if( numOfSelectedPic!= 0 &&
+                        navigation.getSelectedItemId()==R.id.navigation_pictures){
                     StatusSavingService.performSave(mContext,statusListAdapter.getSelectedPicturesStatuses());
-                    StatusSavingService.performSave(mContext,statusListAdapter.getSelectedVidoesStatuses();
+                    String message = numOfSelectedPic == 1 ? "Picture saved" : numOfSelectedPic+" pictures saved";
                     statusListAdapter.mPicturesCheckStates.clear();
-                    statusListAdapter.mVideosCheckStates.clear();
-                    Snackbar.make(view, "Statuses saved", Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show();
                     statusListAdapter.setSelectedPicturesStatuses(new ArrayList<String>());
-                    statusListAdapter.setSelectedVidoesStatuses(new ArrayList<String>());
                     swipeRefreshLayout.setRefreshing(true);
                     StatusSavingService.performFetch(mContext);
                 }
+                else if(numOfSelectedVideos!= 0 &&
+                        navigation.getSelectedItemId()==R.id.navigation_videos){
+                    StatusSavingService.performSave(mContext,statusListAdapter.getSelectedVidoesStatuses());
+                    String message = numOfSelectedVideos == 1 ?  "Video saved" : numOfSelectedVideos + " videos saved";
+                    statusListAdapter.mVideosCheckStates.clear();
+                    Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show();
+                    statusListAdapter.setSelectedVidoesStatuses(new ArrayList<String>());
+                    swipeRefreshLayout.setRefreshing(true);
+                    StatusSavingService.performFetch(mContext);
+//                    navigation.setSelectedItemId(R.id.navigation_pictures);
+                }
                 else{
-                    Snackbar.make(navigation, "No status selected", Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(navigation, "No status selected", Snackbar.LENGTH_SHORT).show();
                 }
 
             }

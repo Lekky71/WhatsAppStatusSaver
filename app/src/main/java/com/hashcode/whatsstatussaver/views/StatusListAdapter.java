@@ -14,12 +14,8 @@ import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.VideoView;
-
-import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.module.GlideModule;
 import com.hashcode.whatsstatussaver.R;
-import com.bumptech.glide.module.*;
 import java.io.File;
 import java.util.ArrayList;
 
@@ -60,6 +56,7 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
         mContext = context;
         statusPaths = statuses;
         selectedPicturesStatuses = new ArrayList<>();
+        selectedVidoesStatuses = new ArrayList<>();
         mPicturesCheckStates = new SparseBooleanArray(statuses.size());
         mVideosCheckStates = new SparseBooleanArray(statuses.size());
     }
@@ -125,10 +122,10 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
         }
         itemView.setTag(fullStatusPath);
 
-        if(mPicturesCheckStates.get(position, false)){
+        if(mPicturesCheckStates.get(position, false) && statusPath.endsWith(".jpg")){
             itemView.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
         }
-        else if(mVideosCheckStates.get(position,false)){
+        else if(mVideosCheckStates.get(position,false) && statusPath.endsWith(".mp4")){
             itemView.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
         }
 
