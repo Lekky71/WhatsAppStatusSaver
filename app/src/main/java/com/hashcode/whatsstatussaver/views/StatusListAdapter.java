@@ -15,9 +15,11 @@ import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.VideoView;
 
+import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.module.GlideModule;
 import com.hashcode.whatsstatussaver.R;
-
+import com.bumptech.glide.module.*;
 import java.io.File;
 import java.util.ArrayList;
 
@@ -28,25 +30,38 @@ import java.util.ArrayList;
 public class StatusListAdapter extends ArrayAdapter<String> implements CompoundButton.OnCheckedChangeListener {
     private ArrayList<String> statusPaths;
     private Context mContext;
-    public SparseBooleanArray mCheckStates;
+    public SparseBooleanArray mPicturesCheckStates;
+    public SparseBooleanArray mVideosCheckStates;
     private ArrayList<View> viewArrayList=new ArrayList<>();
 
-    public void setSelectedStatuses(ArrayList<String> selectedStatuses) {
-        this.selectedStatuses = selectedStatuses;
+
+    public ArrayList<String> getSelectedPicturesStatuses() {
+        return selectedPicturesStatuses;
     }
 
-    public ArrayList<String> selectedStatuses;
-
-    public ArrayList<String> getSelectedStatuses() {
-        return selectedStatuses;
+    public void setSelectedPicturesStatuses(ArrayList<String> selectedPicturesStatuses) {
+        this.selectedPicturesStatuses = selectedPicturesStatuses;
     }
+
+    public ArrayList<String> getSelectedVidoesStatuses() {
+        return selectedVidoesStatuses;
+    }
+
+    public void setSelectedVidoesStatuses(ArrayList<String> selectedVidoesStatuses) {
+        this.selectedVidoesStatuses = selectedVidoesStatuses;
+    }
+
+    public ArrayList<String> selectedPicturesStatuses;
+    public ArrayList<String> selectedVidoesStatuses;
+
 
     public StatusListAdapter(Context context, ArrayList<String> statuses){
         super(context,-1,statuses);
         mContext = context;
         statusPaths = statuses;
-        selectedStatuses = new ArrayList<>();
-        mCheckStates = new SparseBooleanArray(statuses.size());
+        selectedPicturesStatuses = new ArrayList<>();
+        mPicturesCheckStates = new SparseBooleanArray(statuses.size());
+        mVideosCheckStates = new SparseBooleanArray(statuses.size());
     }
 
     public void setStatusClickListener(StatusClickListener statusClickListener) {
@@ -85,13 +100,15 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
         VideoView statusVideoView = itemView.findViewById(R.id.status_video);
         ImageView playVideoImageView = (ImageView) itemView.findViewById(R.id.video_play_button);
 
-        String statusPath = statusPaths.get(position);
+        final String statusPath = statusPaths.get(position);
         final String fullStatusPath = getFolderPath()+"/"+statusPath;
         if(statusPath.endsWith(".jpg")){
+            playVideoImageView.setVisibility(View.INVISIBLE);
             GlideApp.with(mContext).load(fullStatusPath)
                     .into(statusImageView);
         }
         else if(statusPath.endsWith(".gif")){
+            playVideoImageView.setVisibility(View.INVISIBLE);
             GlideApp.with(mContext)
                     .load(fullStatusPath)
                     .error(Color.GRAY)
@@ -108,7 +125,10 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
         }
         itemView.setTag(fullStatusPath);
 
-        if(mCheckStates.get(position, false)){
+        if(mPicturesCheckStates.get(position, false)){
+            itemView.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
+        }
+        else if(mVideosCheckStates.get(position,false)){
             itemView.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
         }
 
@@ -117,19 +137,31 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
             public void onClick(View v) {
                 Log.i("Selecting image","it works");
 
-                if(mCheckStates.get(position,false)){
-                    selectedStatuses.remove(fullStatusPath);
+                if(mPicturesCheckStates.get(position,false)){
+                    selectedPicturesStatuses.remove(fullStatusPath);
                     Log.e("Selection","It saw it as selected");
                     v.setBackground(null);
-                    mCheckStates.delete(position);
+                    mPicturesCheckStates.delete(position);
 //                    v.setBackground(null);
                     viewArrayList.remove(v);
 
-                }else{
-//                    v.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
+                }
+                else if(mVideosCheckStates.get(position,false)){
+                    Log.e("Selection","It saw it as selected");
+                    v.setBackground(null);
+                    mVideosCheckStates.delete(position);
+                    viewArrayList.remove(v);
+
+                }
+                else{
                     v.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
-                    selectedStatuses.add(fullStatusPath);
-                    mCheckStates.put(position,true);
+                    if(statusPath.endsWith(".jpg")){
+                        selectedPicturesStatuses.add(fullStatusPath);
+                        mPicturesCheckStates.put(position,true);
+                    }else if(statusPath.endsWith(".mp4")){
+                        selectedVidoesStatuses.add(fullStatusPath);
+                        mVideosCheckStates.put(position,true);
+                    }
                     viewArrayList.add(v);
                 }
             }
@@ -164,8 +196,10 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
         for (View v:viewArrayList){
             v.setBackground(null);
         }
-        selectedStatuses.clear();
-        mCheckStates.clear();
+        selectedPicturesStatuses.clear();
+        selectedVidoesStatuses.clear();
+        mPicturesCheckStates.clear();
+        mVideosCheckStates.clear();
         notifyDataSetChanged();
     }
 

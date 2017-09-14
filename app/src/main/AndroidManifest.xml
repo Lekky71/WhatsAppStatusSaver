@@ -14,20 +14,18 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity
-            android:name="com.hashcode.whatsstatussaver.MainActivity"
+            android:name=".MainActivity"
             android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar">
-        </activity>
+            android:theme="@style/AppTheme.NoActionBar"></activity>
 
         <service
-            android:name="com.hashcode.whatsstatussaver.data.StatusSavingService"
+            android:name=".data.StatusSavingService"
             android:exported="false" />
 
         <activity
-            android:name="com.hashcode.whatsstatussaver.IntroActivity"
+            android:name=".IntroActivity"
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:label="@string/app_name"
-
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -14,6 +14,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
@@ -59,11 +60,17 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     Context mContext;
     ArrayList<String> allStatusPaths;
     ArrayList<String> selectedStatuses;
+
+    String bottomSelected = "pictures";
+    //ArrayList containing the videos and the pictures
+    ArrayList<String> allPicturePaths;
+    ArrayList<String> allVideoPaths;
     SwipeRefreshLayout swipeRefreshLayout;
     final int MY_PERMISSION_REQUEST_WRITE_STORAGE = 100;
 
     //Using ListView
     GridView mGridView;
+    BottomNavigationView navigation;
     StatusListAdapter statusListAdapter;
 
     private final static String ACTION_FETCH_STATUS = "fetch-status";
@@ -86,26 +93,36 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         mContext = getBaseContext();
         allStatusPaths = new ArrayList<>();
         selectedStatuses = new ArrayList<>();
+        allPicturePaths = new ArrayList<>();
+        allVideoPaths = new ArrayList<>();
         mGridView = (GridView) findViewById(R.id.status_grid_view);
         mGridView.setColumnWidth(3);
         statusListAdapter = new StatusListAdapter(mContext,allStatusPaths);
 
         statusListAdapter.setStatusClickListener(this);
+
+        navigation = (BottomNavigationView) findViewById(R.id.main_bottom_navigation);
+        navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
+
         //Button to save the statuses.
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(statusListAdapter.getSelectedStatuses().size() != 0){
-                    StatusSavingService.performSave(mContext,statusListAdapter.getSelectedStatuses());
-                    statusListAdapter.mCheckStates.clear();
+                if(statusListAdapter.getSelectedPicturesStatuses().size() != 0 ||
+                        statusListAdapter.getSelectedVidoesStatuses().size() != 0){
+                    StatusSavingService.performSave(mContext,statusListAdapter.getSelectedPicturesStatuses());
+                    StatusSavingService.performSave(mContext,statusListAdapter.getSelectedVidoesStatuses();
+                    statusListAdapter.mPicturesCheckStates.clear();
+                    statusListAdapter.mVideosCheckStates.clear();
                     Snackbar.make(view, "Statuses saved", Snackbar.LENGTH_LONG).show();
-                    statusListAdapter.setSelectedStatuses(new ArrayList<String>());
+                    statusListAdapter.setSelectedPicturesStatuses(new ArrayList<String>());
+                    statusListAdapter.setSelectedVidoesStatuses(new ArrayList<String>());
                     swipeRefreshLayout.setRefreshing(true);
                     StatusSavingService.performFetch(mContext);
                 }
                 else{
-                    Snackbar.make(view, "No status selected", Snackbar.LENGTH_LONG).show();
+                    Snackbar.make(navigation, "No status selected", Snackbar.LENGTH_LONG).show();
                 }
 
             }
@@ -138,7 +155,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             return true;
         }
         else if(id == R.id.action_help){
-            showHelpPopup(MainActivity.this ,new Point(0,2));
+            showHelpPopup(MainActivity.this);
             return true;
         }
         else if(id == R.id.action_share){
@@ -177,10 +194,20 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             }
             else {
                 ArrayList<String> receivedStatus = intent.getStringArrayListExtra(StatusSavingService.FETCHED_STATUSES);
+                allPicturePaths.clear();
+                allVideoPaths.clear();
+                for(String path : receivedStatus){
+                    if(path.endsWith(".jpg")){
+                        allPicturePaths.add(path);
+                    }else if(path.endsWith(".mp4")){
+                        allVideoPaths.add(path);
+                    }
+                }
                 statusListAdapter.setFolderPath(intent.getStringExtra(StatusSavingService.FOLDER_PATH));
 //            statusListAdapter.swapStatus(receivedStatus);
+                if(bottomSelected.equals("pictures")) statusListAdapter.swapStatus(allPicturePaths);
+                else statusListAdapter.swapStatus(allVideoPaths);
                 mGridView.setAdapter(statusListAdapter);
-                statusListAdapter.swapStatus(receivedStatus);
                 //Setting up the recycler view
                 swipeRefreshLayout.setRefreshing(false);
             }
@@ -188,7 +215,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     }
 
 
-    private void showHelpPopup(final Activity context, Point p) {
+    private void showHelpPopup(final Activity context) {
         // Inflate the popup_layout.xml
         final Dialog dialog = new Dialog(context);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -229,6 +256,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         lp.copyFrom(dialog.getWindow().getAttributes());
         dialog.getWindow().setAttributes(lp);
         dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        dialog.getWindow().setDimAmount(0);
 
 
         // Getting a reference to Close button, and close the popup when clicked.
@@ -334,7 +362,29 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
      * */
     @Override
     public void onBackPressed() {
-        if (statusListAdapter.getSelectedStatuses().size()==0) super.onBackPressed();
+        if (statusListAdapter.getSelectedPicturesStatuses().size()==0 ||
+                statusListAdapter.getSelectedVidoesStatuses().size()==0) super.onBackPressed();
         else statusListAdapter.clearSelectedStatused();
     }
+
+    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
+            = new BottomNavigationView.OnNavigationItemSelectedListener() {
+
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            switch (item.getItemId()) {
+                case R.id.navigation_pictures:
+                    statusListAdapter.swapStatus(allPicturePaths);
+                    bottomSelected = "pictures";
+                    return true;
+                case R.id.navigation_videos:
+                    bottomSelected = "videos";
+
+                    statusListAdapter.swapStatus(allVideoPaths);
+                    return true;
+            }
+            return false;
+        }
+
+    };
 }
