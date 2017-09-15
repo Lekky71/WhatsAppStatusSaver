@@ -75,8 +75,8 @@ public class IntroActivity extends AppCompatActivity {
 
 
     private ViewFlipper simpleViewFlipper;
-    int[] images = {R.mipmap.view_picture, R.mipmap.view_video, R.mipmap.help_image,
-            R.mipmap.select_status, R.mipmap.save_all};     // array of images
+    int[] images = {R.mipmap.view_picture, R.mipmap.view_video, R.mipmap.view_help,
+            R.mipmap.select_videos, R.mipmap.select_pictures,R.mipmap.save_pictures,R.mipmap.save_videos};     // array of images
 
     boolean alreadyOpened;
     @Override
@@ -97,7 +97,7 @@ public class IntroActivity extends AppCompatActivity {
                             startActivity(new Intent(IntroActivity.this,MainActivity.class));
                             finish();
                         }
-                    }, 15000L);
+                    }, 21000L);
         }
         else {
             startActivity(new Intent(IntroActivity.this,MainActivity.class));

@@ -242,6 +242,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         lp.copyFrom(dialog.getWindow().getAttributes());
         dialog.getWindow().setAttributes(lp);
         dialog.getWindow().setBackgroundDrawable(new ColorDrawable(android.graphics.Color.TRANSPARENT));
+        dialog.getWindow().setDimAmount(0);
         // Creating the PopupWindow
 
         // Clear the default translucent background
