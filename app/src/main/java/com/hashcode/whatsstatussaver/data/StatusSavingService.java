@@ -62,9 +62,10 @@ public class StatusSavingService extends IntentService {
             broadcastIntent.addCategory(Intent.CATEGORY_DEFAULT);
             broadcastIntent.putExtra("the-user-has-whatsapp",false);
             sendBroadcast(broadcastIntent);
+            return;
         }
 
-        if(f.setReadable(true)){
+        if(f.exists() && f.setReadable(true)){
         }
         File files[] = f.listFiles();
         Arrays.sort(files, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
