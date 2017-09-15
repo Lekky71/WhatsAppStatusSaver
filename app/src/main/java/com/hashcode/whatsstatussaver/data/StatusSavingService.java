@@ -65,16 +65,17 @@ public class StatusSavingService extends IntentService {
             return;
         }
 
-        if(f.exists() && f.setReadable(true)){
+        if(f.exists()){
+            File files[] = f.listFiles();
+            Arrays.sort(files, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
+            ArrayList<String> statuses = new ArrayList<>();
+            for (int i=0; i < files.length; i++){
+                statuses.add(files[i].getName());
+                //here populate your listview
+            }
+            sendFetchBroadCast(statuses,foldPath);
         }
-        File files[] = f.listFiles();
-        Arrays.sort(files, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
-        ArrayList<String> statuses = new ArrayList<>();
-        for (int i=0; i < files.length; i++){
-            statuses.add(files[i].getName());
-            //here populate your listview
-        }
-        sendFetchBroadCast(statuses,foldPath);
+
     }
 
 
