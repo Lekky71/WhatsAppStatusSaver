@@ -52,12 +52,14 @@ import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 import com.hashcode.whatsstatussaver.data.StatusSavingService;
+import com.hashcode.whatsstatussaver.floatingbutton.FloatingButtonService;
 import com.hashcode.whatsstatussaver.views.GlideApp;
 import com.hashcode.whatsstatussaver.views.StatusListAdapter;
 
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener, StatusListAdapter.StatusClickListener{
+public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener,
+        StatusListAdapter.StatusClickListener{
     Context mContext;
     ArrayList<String> allStatusPaths;
     ArrayList<String> selectedStatuses;
@@ -93,7 +95,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 getResources().getColor(R.color.colorPrimaryDark));
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        mContext = getBaseContext();
+        mContext = getApplicationContext();
         allStatusPaths = new ArrayList<>();
         selectedStatuses = new ArrayList<>();
         allPicturePaths = new ArrayList<>();
@@ -150,6 +152,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     @Override
     protected void onDestroy() {
+//        startService(new Intent(this, FloatingButtonService.class));
         this.unregisterReceiver(fetchStatusReceiver);
         super.onDestroy();
     }
@@ -172,6 +175,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         }
         else if(id == R.id.action_help){
             showHelpPopup(MainActivity.this);
+            startService(new Intent(MainActivity.this, FloatingButtonService.class));
+            finish();
             return true;
         }
         else if(id == R.id.action_share){
@@ -404,4 +409,16 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         }
 
     };
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+//        startService(new Intent(this, FloatingButtonService.class));
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+//        startService(new Intent(this, FloatingButtonService.class));
+    }
 }

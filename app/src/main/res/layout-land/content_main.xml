@@ -8,13 +8,12 @@
     tools:context="com.hashcode.whatsstatussaver.MainActivity"
     tools:showIn="@layout/activity_main">
 
-    <!--<RelativeLayout-->
-        <!--android:layout_width="576dp"-->
-        <!--android:layout_height="247dp"-->
-        <!--tools:layout_editor_absoluteY="8dp"-->
-        <!--tools:layout_editor_absoluteX="8dp">-->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-    <android.support.v4.widget.SwipeRefreshLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <android.support.v4.widget.SwipeRefreshLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/refresh_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -30,12 +29,12 @@
         <GridView xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/status_grid_view"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:numColumns="5"
             android:scrollbars="vertical"
             android:smoothScrollbar="true" />
 
     </android.support.v4.widget.SwipeRefreshLayout>
 
-    <!--</RelativeLayout>-->
+    </RelativeLayout>
 </android.support.constraint.ConstraintLayout>

@@ -89,14 +89,13 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
     @NonNull
     @Override
     public View getView(final int position, @Nullable View convertView, @NonNull ViewGroup parent) {
-        LayoutInflater inflater = (LayoutInflater) mContext
-                .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        final View itemView = inflater.inflate(R.layout.each_status_view, parent, false);
+        Context context = parent.getContext();
+        LayoutInflater inflater =  LayoutInflater.from(context);
+        View itemView = inflater.inflate(R.layout.each_status_view, parent, false);
         Log.e("Loading the vies", "It did so");
         ImageView statusImageView = (ImageView) itemView.findViewById(R.id.status_image);
-        VideoView statusVideoView = itemView.findViewById(R.id.status_video);
         ImageView playVideoImageView = (ImageView) itemView.findViewById(R.id.video_play_button);
-
+//        playVideoImageView.setImageDrawable(mContext.getResources().getDrawable(R.drawable.ic_play_video_white_24dp));
         final String statusPath = statusPaths.get(position);
         final String fullStatusPath = getFolderPath()+"/"+statusPath;
         if(statusPath.endsWith(".jpg")){
