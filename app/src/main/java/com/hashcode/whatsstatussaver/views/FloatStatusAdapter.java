@@ -13,9 +13,10 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
-import android.widget.VideoView;
+
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.hashcode.whatsstatussaver.R;
+
 import java.io.File;
 import java.util.ArrayList;
 
@@ -24,12 +25,25 @@ import java.util.ArrayList;
  */
 
 public class FloatStatusAdapter extends ArrayAdapter<String> implements CompoundButton.OnCheckedChangeListener {
-    private ArrayList<String> statusPaths;
-    private Context mContext;
     public SparseBooleanArray mPicturesCheckStates;
     public SparseBooleanArray mVideosCheckStates;
+    public ArrayList<String> selectedPicturesStatuses;
+    public ArrayList<String> selectedVidoesStatuses;
+    StatusClickListener statusClickListener;
+    private ArrayList<String> statusPaths;
+    private Context mContext;
     private ArrayList<View> viewArrayList=new ArrayList<>();
+    private String folderPath;
 
+    public FloatStatusAdapter(Context context, ArrayList<String> statuses){
+        super(context,-1,statuses);
+        mContext = context;
+        statusPaths = statuses;
+        selectedPicturesStatuses = new ArrayList<>();
+        selectedVidoesStatuses = new ArrayList<>();
+        mPicturesCheckStates = new SparseBooleanArray(statuses.size());
+        mVideosCheckStates = new SparseBooleanArray(statuses.size());
+    }
 
     public ArrayList<String> getSelectedPicturesStatuses() {
         return selectedPicturesStatuses;
@@ -47,20 +61,6 @@ public class FloatStatusAdapter extends ArrayAdapter<String> implements Compound
         this.selectedVidoesStatuses = selectedVidoesStatuses;
     }
 
-    public ArrayList<String> selectedPicturesStatuses;
-    public ArrayList<String> selectedVidoesStatuses;
-
-
-    public FloatStatusAdapter(Context context, ArrayList<String> statuses){
-        super(context,-1,statuses);
-        mContext = context;
-        statusPaths = statuses;
-        selectedPicturesStatuses = new ArrayList<>();
-        selectedVidoesStatuses = new ArrayList<>();
-        mPicturesCheckStates = new SparseBooleanArray(statuses.size());
-        mVideosCheckStates = new SparseBooleanArray(statuses.size());
-    }
-
     public void setStatusClickListener(StatusClickListener statusClickListener) {
         this.statusClickListener = statusClickListener;
     }
@@ -70,12 +70,6 @@ public class FloatStatusAdapter extends ArrayAdapter<String> implements Compound
 
     }
 
-    public interface StatusClickListener{
-        void onStatusLongClick(int position, String url);
-    }
-
-    StatusClickListener statusClickListener;
-
     public String getFolderPath() {
         return folderPath;
     }
@@ -83,8 +77,6 @@ public class FloatStatusAdapter extends ArrayAdapter<String> implements Compound
     public void setFolderPath(String folderPath) {
         this.folderPath = folderPath;
     }
-
-    private String folderPath;
 
     @NonNull
     @Override
@@ -174,6 +166,7 @@ public class FloatStatusAdapter extends ArrayAdapter<String> implements Compound
         return itemView;
 
     }
+
     public void swapStatus(ArrayList<String> data) {
         if (statusPaths != null) {
             statusPaths = new ArrayList<>();
@@ -197,6 +190,10 @@ public class FloatStatusAdapter extends ArrayAdapter<String> implements Compound
         mPicturesCheckStates.clear();
         mVideosCheckStates.clear();
         notifyDataSetChanged();
+    }
+
+    public interface StatusClickListener{
+        void onStatusLongClick(int position, String url);
     }
 
 }

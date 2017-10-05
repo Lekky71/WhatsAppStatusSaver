@@ -49,22 +49,19 @@ import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
 public class FloatingButtonService extends Service implements SwipeRefreshLayout.OnRefreshListener,
         FloatStatusAdapter.StatusClickListener{
-    private WindowManager mWindowManager;
-    private View mFloatingView;
+    private final static String ACTION_FETCH_STATUS = "fetch-status";
+    private final static String ACTION_SAVE_STATUS = "save-status";
+    final int MY_PERMISSION_REQUEST_WRITE_STORAGE = 100;
     public String TAG = FloatingButtonService.class.getSimpleName();
-
     /////////
     Context mContext;
     ArrayList<String> allStatusPaths;
     ArrayList<String> selectedStatuses;
-
     String bottomSelected = "pictures";
     //ArrayList containing the videos and the pictures
     ArrayList<String> allPicturePaths;
     ArrayList<String> allVideoPaths;
     SwipeRefreshLayout swipeRefreshLayout;
-    final int MY_PERMISSION_REQUEST_WRITE_STORAGE = 100;
-
     //Using ListView
     GridView mGridView;
     BottomNavigationView navigation;
@@ -73,19 +70,109 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
     CounterFab floatingButton;
     FloatingActionButton expandedButton;
     RelativeLayout expandedLayout;
+    public View.OnTouchListener expandedListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            floatingButton.setVisibility(View.VISIBLE);
+            expandedButton.setVisibility(View.GONE);
+            expandedLayout.setVisibility(View.GONE);
+            return true;
+        }
+    };
     ImageView closeImageView;
-
     Display rootDisplay;
-
     RelativeLayout rootRelativeLayout;
     WindowManager.LayoutParams params;
     boolean isButtonClosed;
-    private final static String ACTION_FETCH_STATUS = "fetch-status";
-    private final static String ACTION_SAVE_STATUS = "save-status";
+    private WindowManager mWindowManager;
+    private View mFloatingView;
+    View.OnTouchListener floatButtonTouchListener = new View.OnTouchListener() {
+        private int initialX;
+        private int initialY;
+        private float initialTouchX;
+        private float initialTouchY;
 
 
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            rootDisplay = mWindowManager.getDefaultDisplay();
+            Point size = new Point();
+            rootDisplay.getSize(size);
+            int width = size.x;
+            int height = size.y;
+
+            rootRelativeLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT));
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+//                    closeImageView.setVisibility(View.VISIBLE);
+                    //remember the initial position.
+                    initialX = params.x;
+                    initialY = params.y;
+
+                    //get the touch location
+                    initialTouchX = event.getRawX();
+                    initialTouchY = event.getRawY();
+                    return true;
+                case MotionEvent.ACTION_UP:
+//                    closeImageView.setVisibility(View.VISIBLE);
+                    int Xdiff = (int) (event.getRawX() - initialTouchX);
+                    int Ydiff = (int) (event.getRawY() - initialTouchY);
+
+
+                    //The check for Xdiff <10 && YDiff< 10 because sometime elements moves a little while clicking.
+                    //So that is click event.
+                    if (Xdiff < 10 && Ydiff < 10) {
+                        if (isViewCollapsed()) {
+                            //When user clicks on the image view of the collapsed layout,
+                            //visibility of the collapsed layout will be changed to "View.GONE"
+                            //and expanded view will become visible.
+                            floatingButton.setVisibility(View.GONE);
+                            expandedButton.setVisibility(View.VISIBLE);
+                            expandedLayout.setVisibility(View.VISIBLE);
+                        }
+                    }
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+//                    closeImageView.setVisibility(View.VISIBLE);
+                    //Calculate the X and Y coordinates of the view.
+                    params.x = initialX + (int) (event.getRawX() - initialTouchX);
+                    params.y = initialY + (int) (event.getRawY() - initialTouchY);
+                    //Update the layout with new X & Y coordinate
+                    mWindowManager.updateViewLayout(mFloatingView, params);
+                    return true;
+
+                case MotionEvent.ACTION_HOVER_EXIT:
+                    closeImageView.setVisibility(View.GONE);
+                    rootRelativeLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT));
+                    return true;
+
+            }
+            return false;
+        }
+    };
     private FloatingButtonService.FetchStatusReceiver fetchStatusReceiver;
+    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
+            = new BottomNavigationView.OnNavigationItemSelectedListener() {
 
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            switch (item.getItemId()) {
+                case R.id.navigation_pictures:
+                    floatStatusAdapter.swapStatus(allPicturePaths);
+                    bottomSelected = "pictures";
+                    return true;
+                case R.id.navigation_videos:
+                    bottomSelected = "videos";
+
+                    floatStatusAdapter.swapStatus(allVideoPaths);
+                    return true;
+            }
+            return false;
+        }
+
+    };
 
     ///////////
     public FloatingButtonService() {
@@ -96,7 +183,6 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
     public IBinder onBind(Intent intent) {
         return null;
     }
-
 
     @Override
     public void onCreate() {
@@ -223,6 +309,39 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         expandedLayout.setVisibility(View.GONE);
     }
 
+    private void showHelpPopup(final Activity context) {
+        Intent imageIntent = new Intent(this,MainActivity.class);
+        imageIntent.putExtra("HELP_KEY","show-help-dialog");
+        startActivity(imageIntent);
+
+    }
+
+    public void showImagePopup(Point p, final String uri) {
+        Intent imageIntent = new Intent(this,MainActivity.class);
+        imageIntent.putExtra("STATUS_KEY",uri);
+        imageIntent.setFlags(FLAG_ACTIVITY_NEW_TASK);
+        startActivity(imageIntent);
+
+    }
+
+    public void askForContactPermission(){
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            int permissionCheck = ContextCompat.checkSelfPermission(FloatingButtonService.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            if(permissionCheck != PackageManager.PERMISSION_GRANTED){
+                //close the app
+            }else{
+                StatusSavingService.performFetch(mContext);
+            }
+        }
+        else{
+            StatusSavingService.performFetch(mContext);
+        }
+    }
+
+    private boolean isViewCollapsed() {
+        return mFloatingView == null || mFloatingView.findViewById(R.id.floating_status_head).getVisibility() == View.VISIBLE;
+    }
+
     /*
         Receiver for displaying the status after the background fetch.
      */
@@ -255,140 +374,5 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
             }
         }
     }
-
-
-
-    private void showHelpPopup(final Activity context) {
-        Intent imageIntent = new Intent(this,MainActivity.class);
-        imageIntent.putExtra("HELP_KEY","show-help-dialog");
-        startActivity(imageIntent);
-
-    }
-
-    public void showImagePopup(Point p, final String uri) {
-        Intent imageIntent = new Intent(this,MainActivity.class);
-        imageIntent.putExtra("STATUS_KEY",uri);
-        imageIntent.setFlags(FLAG_ACTIVITY_NEW_TASK);
-        startActivity(imageIntent);
-
-    }
-
-
-    public void askForContactPermission(){
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-            int permissionCheck = ContextCompat.checkSelfPermission(FloatingButtonService.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-            if(permissionCheck != PackageManager.PERMISSION_GRANTED){
-                //close the app
-            }else{
-                StatusSavingService.performFetch(mContext);
-            }
-        }
-        else{
-            StatusSavingService.performFetch(mContext);
-        }
-    }
-
-
-    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
-            = new BottomNavigationView.OnNavigationItemSelectedListener() {
-
-        @Override
-        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-            switch (item.getItemId()) {
-                case R.id.navigation_pictures:
-                    floatStatusAdapter.swapStatus(allPicturePaths);
-                    bottomSelected = "pictures";
-                    return true;
-                case R.id.navigation_videos:
-                    bottomSelected = "videos";
-
-                    floatStatusAdapter.swapStatus(allVideoPaths);
-                    return true;
-            }
-            return false;
-        }
-
-    };
-
-    View.OnTouchListener floatButtonTouchListener = new View.OnTouchListener() {
-        private int initialX;
-        private int initialY;
-        private float initialTouchX;
-        private float initialTouchY;
-
-
-        @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            rootDisplay = mWindowManager.getDefaultDisplay();
-            Point size = new Point();
-            rootDisplay.getSize(size);
-            int width = size.x;
-            int height = size.y;
-
-            rootRelativeLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT));
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-//                    closeImageView.setVisibility(View.VISIBLE);
-                    //remember the initial position.
-                    initialX = params.x;
-                    initialY = params.y;
-
-                    //get the touch location
-                    initialTouchX = event.getRawX();
-                    initialTouchY = event.getRawY();
-                    return true;
-                case MotionEvent.ACTION_UP:
-//                    closeImageView.setVisibility(View.VISIBLE);
-                    int Xdiff = (int) (event.getRawX() - initialTouchX);
-                    int Ydiff = (int) (event.getRawY() - initialTouchY);
-
-
-                    //The check for Xdiff <10 && YDiff< 10 because sometime elements moves a little while clicking.
-                    //So that is click event.
-                    if (Xdiff < 10 && Ydiff < 10) {
-                        if (isViewCollapsed()) {
-                            //When user clicks on the image view of the collapsed layout,
-                            //visibility of the collapsed layout will be changed to "View.GONE"
-                            //and expanded view will become visible.
-                            floatingButton.setVisibility(View.GONE);
-                            expandedButton.setVisibility(View.VISIBLE);
-                            expandedLayout.setVisibility(View.VISIBLE);
-                        }
-                    }
-                    return true;
-                case MotionEvent.ACTION_MOVE:
-//                    closeImageView.setVisibility(View.VISIBLE);
-                    //Calculate the X and Y coordinates of the view.
-                    params.x = initialX + (int) (event.getRawX() - initialTouchX);
-                    params.y = initialY + (int) (event.getRawY() - initialTouchY);
-                    //Update the layout with new X & Y coordinate
-                    mWindowManager.updateViewLayout(mFloatingView, params);
-                    return true;
-
-                case MotionEvent.ACTION_HOVER_EXIT:
-                    closeImageView.setVisibility(View.GONE);
-                    rootRelativeLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT));
-                    return true;
-
-            }
-            return false;
-        }
-    };
-
-    private boolean isViewCollapsed() {
-        return mFloatingView == null || mFloatingView.findViewById(R.id.floating_status_head).getVisibility() == View.VISIBLE;
-    }
-
-    public View.OnTouchListener expandedListener = new View.OnTouchListener() {
-        @Override
-        public boolean onTouch(View view, MotionEvent motionEvent) {
-            floatingButton.setVisibility(View.VISIBLE);
-            expandedButton.setVisibility(View.GONE);
-            expandedLayout.setVisibility(View.GONE);
-            return true;
-        }
-    };
 
 }

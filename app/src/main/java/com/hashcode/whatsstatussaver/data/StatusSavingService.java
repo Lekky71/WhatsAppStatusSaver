@@ -9,7 +9,6 @@ import android.support.annotation.Nullable;
 
 import com.hashcode.whatsstatussaver.MainActivity;
 
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -23,18 +22,28 @@ import java.util.Arrays;
  */
 
 public class StatusSavingService extends IntentService {
-    private final static String ACTION_FETCH_STATUS = "fetch-status";
-    private final static String ACTION_SAVE_STATUS = "save-status";
-
-    private static final String TAG = StatusSavingService.class.getSimpleName();
-
-
     public final static String FETCHED_STATUSES = "fetched-statuses";
     public static final String SELECTED_STATUSES = "selected-statuses";
+    private final static String ACTION_FETCH_STATUS = "fetch-status";
+    private final static String ACTION_SAVE_STATUS = "save-status";
+    private static final String TAG = StatusSavingService.class.getSimpleName();
     public static String FOLDER_PATH ="folder-path";
 
     public StatusSavingService(){
         super(TAG);
+    }
+
+    public static void performSave(Context context, ArrayList<String> paths){
+        Intent intent = new Intent(context,StatusSavingService.class);
+        intent.setAction(ACTION_SAVE_STATUS);
+        intent.putExtra(SELECTED_STATUSES,paths);
+        context.startService(intent);
+    }
+
+    public static void performFetch(Context context){
+        Intent intent = new Intent(context,StatusSavingService.class);
+        intent.setAction(ACTION_FETCH_STATUS);
+        context.startService(intent);
     }
 
     @Override
@@ -65,20 +74,16 @@ public class StatusSavingService extends IntentService {
             return;
         }
 
-        if(f.exists()){
-
-        }
         File files[] = f.listFiles();
         Arrays.sort(files, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
         ArrayList<String> statuses = new ArrayList<>();
-        for (int i=0; i < files.length; i++){
+        for(int i=0; i < files.length; i++){
             statuses.add(files[i].getName());
             //here populate your listview
         }
         sendFetchBroadCast(statuses,foldPath);
 
     }
-
 
     private void saveAllSelectedStatus(ArrayList<String> statuses){
         String fileType = Environment.DIRECTORY_PICTURES;
@@ -104,17 +109,6 @@ public class StatusSavingService extends IntentService {
         }
     }
 
-    public static void performSave(Context context, ArrayList<String> paths){
-        Intent intent = new Intent(context,StatusSavingService.class);
-        intent.setAction(ACTION_SAVE_STATUS);
-        intent.putExtra(SELECTED_STATUSES,paths);
-        context.startService(intent);
-    }
-    public static void performFetch(Context context){
-        Intent intent = new Intent(context,StatusSavingService.class);
-        intent.setAction(ACTION_FETCH_STATUS);
-        context.startService(intent);
-    }
     public void sendFetchBroadCast(ArrayList<String> statuses, String folderPath){
         Intent broadcastIntent = new Intent();
         broadcastIntent.setAction(MainActivity.FetchStatusReceiver.PROCESS_FETCH);

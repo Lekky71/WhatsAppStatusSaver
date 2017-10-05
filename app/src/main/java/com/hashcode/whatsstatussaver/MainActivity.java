@@ -55,34 +55,49 @@ import com.google.android.exoplayer2.util.Util;
 import com.hashcode.whatsstatussaver.data.StatusSavingService;
 import com.hashcode.whatsstatussaver.floatingbutton.FloatingButtonService;
 import com.hashcode.whatsstatussaver.views.GlideApp;
-import com.hashcode.whatsstatussaver.views.FloatStatusAdapter;
 import com.hashcode.whatsstatussaver.views.StatusListAdapter;
 
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener,
         StatusListAdapter.StatusClickListener{
+    private final static String ACTION_FETCH_STATUS = "fetch-status";
+    private final static String ACTION_SAVE_STATUS = "save-status";
+    private static final int CODE_DRAW_OVER_OTHER_APP_PERMISSION = 2084;
+    final int MY_PERMISSION_REQUEST_WRITE_STORAGE = 100;
     Context mContext;
     ArrayList<String> allStatusPaths;
     ArrayList<String> selectedStatuses;
-
     String bottomSelected = "pictures";
     //ArrayList containing the videos and the pictures
     ArrayList<String> allPicturePaths;
     ArrayList<String> allVideoPaths;
     SwipeRefreshLayout swipeRefreshLayout;
-    final int MY_PERMISSION_REQUEST_WRITE_STORAGE = 100;
-
     //Using ListView
     GridView mGridView;
     BottomNavigationView navigation;
     StatusListAdapter statusListAdapter;
-
-    private final static String ACTION_FETCH_STATUS = "fetch-status";
-    private final static String ACTION_SAVE_STATUS = "save-status";
-    private static final int CODE_DRAW_OVER_OTHER_APP_PERMISSION = 2084;
-
     private FetchStatusReceiver fetchStatusReceiver;
+    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
+            = new BottomNavigationView.OnNavigationItemSelectedListener() {
+
+        @Override
+        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+            switch (item.getItemId()) {
+                case R.id.navigation_pictures:
+                    statusListAdapter.swapStatus(allPicturePaths);
+                    bottomSelected = "pictures";
+                    return true;
+                case R.id.navigation_videos:
+                    bottomSelected = "videos";
+                    statusListAdapter.swapStatus(allVideoPaths);
+                    return true;
+            }
+            return false;
+        }
+
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -212,40 +227,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     public void onStatusLongClick(int position, String url) {
         showImagePopup(new Point(0,2),url);
     }
-
-    /*
-        Receiver for displaying the status after the background fetch.
-     */
-    public class FetchStatusReceiver extends BroadcastReceiver{
-        public static final String PROCESS_FETCH = "setup-all-views";
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            boolean hasWhatsApp = intent.getBooleanExtra("the-user-has-whatsapp",true);
-            if(!hasWhatsApp){
-                Snackbar.make(mGridView,"Sorry, you do not have WhatsApp Installed",Snackbar.LENGTH_LONG).show();
-            }
-            else {
-                ArrayList<String> receivedStatus = intent.getStringArrayListExtra(StatusSavingService.FETCHED_STATUSES);
-                allPicturePaths.clear();
-                allVideoPaths.clear();
-                for(String path : receivedStatus){
-                    if(path.endsWith(".jpg")){
-                        allPicturePaths.add(path);
-                    }else if(path.endsWith(".mp4")){
-                        allVideoPaths.add(path);
-                    }
-                }
-                statusListAdapter.setFolderPath(intent.getStringExtra(StatusSavingService.FOLDER_PATH));
-//            statusListAdapter.swapStatus(receivedStatus);
-                if(bottomSelected.equals("pictures")) statusListAdapter.swapStatus(allPicturePaths);
-                else statusListAdapter.swapStatus(allVideoPaths);
-                mGridView.setAdapter(statusListAdapter);
-                //Setting up the recycler view
-                swipeRefreshLayout.setRefreshing(false);
-            }
-        }
-    }
-
 
     private void showHelpPopup(final Activity context) {
         // Inflate the popup_layout.xml
@@ -400,27 +381,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         else statusListAdapter.clearSelectedStatused();
     }
 
-    private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
-            = new BottomNavigationView.OnNavigationItemSelectedListener() {
-
-        @Override
-        public boolean onNavigationItemSelected(@NonNull MenuItem item) {
-            switch (item.getItemId()) {
-                case R.id.navigation_pictures:
-                    statusListAdapter.swapStatus(allPicturePaths);
-                    bottomSelected = "pictures";
-                    return true;
-                case R.id.navigation_videos:
-                    bottomSelected = "videos";
-
-                    statusListAdapter.swapStatus(allVideoPaths);
-                    return true;
-            }
-            return false;
-        }
-
-    };
-
     @Override
     protected void onPause() {
         super.onPause();
@@ -466,6 +426,39 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             }
         } else {
             super.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
+    /*
+        Receiver for displaying the status after the background fetch.
+     */
+    public class FetchStatusReceiver extends BroadcastReceiver{
+        public static final String PROCESS_FETCH = "setup-all-views";
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            boolean hasWhatsApp = intent.getBooleanExtra("the-user-has-whatsapp",true);
+            if(!hasWhatsApp){
+                Snackbar.make(mGridView,"Sorry, you do not have WhatsApp Installed",Snackbar.LENGTH_LONG).show();
+            }
+            else {
+                ArrayList<String> receivedStatus = intent.getStringArrayListExtra(StatusSavingService.FETCHED_STATUSES);
+                allPicturePaths.clear();
+                allVideoPaths.clear();
+                for(String path : receivedStatus){
+                    if(path.endsWith(".jpg")){
+                        allPicturePaths.add(path);
+                    }else if(path.endsWith(".mp4")){
+                        allVideoPaths.add(path);
+                    }
+                }
+                statusListAdapter.setFolderPath(intent.getStringExtra(StatusSavingService.FOLDER_PATH));
+//            statusListAdapter.swapStatus(receivedStatus);
+                if(bottomSelected.equals("pictures")) statusListAdapter.swapStatus(allPicturePaths);
+                else statusListAdapter.swapStatus(allVideoPaths);
+                mGridView.setAdapter(statusListAdapter);
+                //Setting up the recycler view
+                swipeRefreshLayout.setRefreshing(false);
+            }
         }
     }
 }

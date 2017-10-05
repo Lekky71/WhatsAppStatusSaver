@@ -24,12 +24,25 @@ import java.util.ArrayList;
  */
 
 public class StatusListAdapter extends ArrayAdapter<String> implements CompoundButton.OnCheckedChangeListener {
-    private ArrayList<String> statusPaths;
-    private Context mContext;
     public SparseBooleanArray mPicturesCheckStates;
     public SparseBooleanArray mVideosCheckStates;
+    public ArrayList<String> selectedPicturesStatuses;
+    public ArrayList<String> selectedVidoesStatuses;
+    StatusClickListener statusClickListener;
+    private ArrayList<String> statusPaths;
+    private Context mContext;
     private ArrayList<View> viewArrayList=new ArrayList<>();
+    private String folderPath;
 
+    public StatusListAdapter(Context context, ArrayList<String> statuses){
+        super(context,-1,statuses);
+        mContext = context;
+        statusPaths = statuses;
+        selectedPicturesStatuses = new ArrayList<>();
+        selectedVidoesStatuses = new ArrayList<>();
+        mPicturesCheckStates = new SparseBooleanArray(statuses.size());
+        mVideosCheckStates = new SparseBooleanArray(statuses.size());
+    }
 
     public ArrayList<String> getSelectedPicturesStatuses() {
         return selectedPicturesStatuses;
@@ -47,20 +60,6 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
         this.selectedVidoesStatuses = selectedVidoesStatuses;
     }
 
-    public ArrayList<String> selectedPicturesStatuses;
-    public ArrayList<String> selectedVidoesStatuses;
-
-
-    public StatusListAdapter(Context context, ArrayList<String> statuses){
-        super(context,-1,statuses);
-        mContext = context;
-        statusPaths = statuses;
-        selectedPicturesStatuses = new ArrayList<>();
-        selectedVidoesStatuses = new ArrayList<>();
-        mPicturesCheckStates = new SparseBooleanArray(statuses.size());
-        mVideosCheckStates = new SparseBooleanArray(statuses.size());
-    }
-
     public void setStatusClickListener(StatusClickListener statusClickListener) {
         this.statusClickListener = statusClickListener;
     }
@@ -70,12 +69,6 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
 
     }
 
-    public interface StatusClickListener{
-        void onStatusLongClick(int position, String url);
-    }
-
-    StatusClickListener statusClickListener;
-
     public String getFolderPath() {
         return folderPath;
     }
@@ -83,8 +76,6 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
     public void setFolderPath(String folderPath) {
         this.folderPath = folderPath;
     }
-
-    private String folderPath;
 
     @NonNull
     @Override
@@ -174,6 +165,7 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
         return itemView;
 
     }
+
     public void swapStatus(ArrayList<String> data) {
         if (statusPaths != null) {
             statusPaths = new ArrayList<>();
@@ -197,6 +189,10 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
         mPicturesCheckStates.clear();
         mVideosCheckStates.clear();
         notifyDataSetChanged();
+    }
+
+    public interface StatusClickListener{
+        void onStatusLongClick(int position, String url);
     }
 
 }
