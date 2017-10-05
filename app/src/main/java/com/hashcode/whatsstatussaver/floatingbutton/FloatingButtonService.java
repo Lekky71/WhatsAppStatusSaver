@@ -21,26 +21,34 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.GridView;
+import android.widget.ImageView;
+import android.widget.RelativeLayout;
 
+import com.andremion.counterfab.CounterFab;
 import com.hashcode.whatsstatussaver.MainActivity;
 import com.hashcode.whatsstatussaver.R;
 import com.hashcode.whatsstatussaver.data.StatusSavingService;
-import com.hashcode.whatsstatussaver.views.StatusListAdapter;
+import com.hashcode.whatsstatussaver.views.FloatStatusAdapter;
 
 import java.util.ArrayList;
+
+import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
 /**
  * Created by oluwalekefakorede on 26/09/2017.
  */
 
 public class FloatingButtonService extends Service implements SwipeRefreshLayout.OnRefreshListener,
-        StatusListAdapter.StatusClickListener{
+        FloatStatusAdapter.StatusClickListener{
     private WindowManager mWindowManager;
     private View mFloatingView;
     public String TAG = FloatingButtonService.class.getSimpleName();
@@ -60,10 +68,21 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
     //Using ListView
     GridView mGridView;
     BottomNavigationView navigation;
-    StatusListAdapter statusListAdapter;
+    FloatStatusAdapter floatStatusAdapter;
 
+    CounterFab floatingButton;
+    FloatingActionButton expandedButton;
+    RelativeLayout expandedLayout;
+    ImageView closeImageView;
+
+    Display rootDisplay;
+
+    RelativeLayout rootRelativeLayout;
+    WindowManager.LayoutParams params;
+    boolean isButtonClosed;
     private final static String ACTION_FETCH_STATUS = "fetch-status";
     private final static String ACTION_SAVE_STATUS = "save-status";
+
 
     private FloatingButtonService.FetchStatusReceiver fetchStatusReceiver;
 
@@ -82,11 +101,19 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
     @Override
     public void onCreate() {
         super.onCreate();
-        WindowManager.LayoutParams params = setUpAllViews();
+        mFloatingView = LayoutInflater.from(this).inflate(R.layout.floating_button_layout,null);
+        params = setUpAllViews();
 
         Log.i(TAG, "Floating service has started");
-        ////
 
+        floatingButton = mFloatingView.findViewById(R.id.floating_status_head);
+        expandedButton = mFloatingView.findViewById(R.id.floating_status_head_expanded);
+        expandedLayout = mFloatingView.findViewById(R.id.expanded_root_view);
+        closeImageView = mFloatingView.findViewById(R.id.floating_close_button);
+
+        rootRelativeLayout = mFloatingView.findViewById(R.id.float_overall_layout);
+        ////
+        isButtonClosed = true;
         IntentFilter filter = new IntentFilter(FetchStatusReceiver.PROCESS_FETCH);
         filter.addCategory(Intent.CATEGORY_DEFAULT);
         fetchStatusReceiver = new FetchStatusReceiver();
@@ -103,37 +130,39 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         allVideoPaths = new ArrayList<>();
         mGridView = (GridView) mFloatingView.findViewById(R.id.status_grid_view);
         mGridView.setColumnWidth(3);
-        statusListAdapter = new StatusListAdapter(mContext,allStatusPaths);
+        floatStatusAdapter = new FloatStatusAdapter(mContext,allStatusPaths);
 
-        statusListAdapter.setStatusClickListener(this);
+        floatStatusAdapter.setStatusClickListener(this);
 
         navigation = (BottomNavigationView) mFloatingView.findViewById(R.id.main_bottom_navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
+        floatingButton.setOnTouchListener(floatButtonTouchListener);
+        expandedButton.setOnTouchListener(expandedListener);
         //Button to save the statuses.
-        FloatingActionButton fab = (FloatingActionButton) mFloatingView.findViewById(R.id.fab);
+        FloatingActionButton fab = mFloatingView.findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                int numOfSelectedPic = statusListAdapter.getSelectedPicturesStatuses().size();
-                int numOfSelectedVideos = statusListAdapter.getSelectedVidoesStatuses().size();
+                int numOfSelectedPic = floatStatusAdapter.getSelectedPicturesStatuses().size();
+                int numOfSelectedVideos = floatStatusAdapter.getSelectedVidoesStatuses().size();
                 if( numOfSelectedPic!= 0 &&
                         navigation.getSelectedItemId()==R.id.navigation_pictures){
-                    StatusSavingService.performSave(mContext,statusListAdapter.getSelectedPicturesStatuses());
+                    StatusSavingService.performSave(mContext, floatStatusAdapter.getSelectedPicturesStatuses());
                     String message = numOfSelectedPic == 1 ? "Picture saved" : numOfSelectedPic+" pictures saved";
-                    statusListAdapter.mPicturesCheckStates.clear();
+                    floatStatusAdapter.mPicturesCheckStates.clear();
                     Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show();
-                    statusListAdapter.setSelectedPicturesStatuses(new ArrayList<String>());
+                    floatStatusAdapter.setSelectedPicturesStatuses(new ArrayList<String>());
                     swipeRefreshLayout.setRefreshing(true);
                     StatusSavingService.performFetch(mContext);
                 }
                 else if(numOfSelectedVideos!= 0 &&
                         navigation.getSelectedItemId()==R.id.navigation_videos){
-                    StatusSavingService.performSave(mContext,statusListAdapter.getSelectedVidoesStatuses());
+                    StatusSavingService.performSave(mContext, floatStatusAdapter.getSelectedVidoesStatuses());
                     String message = numOfSelectedVideos == 1 ?  "Video saved" : numOfSelectedVideos + " videos saved";
-                    statusListAdapter.mVideosCheckStates.clear();
+                    floatStatusAdapter.mVideosCheckStates.clear();
                     Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show();
-                    statusListAdapter.setSelectedVidoesStatuses(new ArrayList<String>());
+                    floatStatusAdapter.setSelectedVidoesStatuses(new ArrayList<String>());
                     swipeRefreshLayout.setRefreshing(true);
                     StatusSavingService.performFetch(mContext);
 //                    navigation.setSelectedItemId(R.id.navigation_pictures);
@@ -163,7 +192,6 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
 
     @SuppressLint("InflateParams")
     public WindowManager.LayoutParams setUpAllViews(){
-        mFloatingView = LayoutInflater.from(this).inflate(R.layout.floating_button_layout,null);
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
@@ -171,7 +199,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
 
-        params.gravity = Gravity.TOP | Gravity.LEFT;        //Initially view will be added to top-left corner
+        params.gravity = Gravity.TOP | Gravity.START;        //Initially view will be added to top-left corner
         params.x = 0;
         params.y = 100;
 
@@ -184,12 +212,15 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
     @Override
     public void onRefresh() {
         StatusSavingService.performFetch(mContext);
-        statusListAdapter.clearSelectedStatused();
+        floatStatusAdapter.clearSelectedStatused();
     }
 
     @Override
     public void onStatusLongClick(int position, String url) {
         showImagePopup(new Point(0,2),url);
+        floatingButton.setVisibility(View.VISIBLE);
+        expandedButton.setVisibility(View.GONE);
+        expandedLayout.setVisibility(View.GONE);
     }
 
     /*
@@ -214,11 +245,11 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
                         allVideoPaths.add(path);
                     }
                 }
-                statusListAdapter.setFolderPath(intent.getStringExtra(StatusSavingService.FOLDER_PATH));
-//            statusListAdapter.swapStatus(receivedStatus);
-                if(bottomSelected.equals("pictures")) statusListAdapter.swapStatus(allPicturePaths);
-                else statusListAdapter.swapStatus(allVideoPaths);
-                mGridView.setAdapter(statusListAdapter);
+                floatStatusAdapter.setFolderPath(intent.getStringExtra(StatusSavingService.FOLDER_PATH));
+//            floatStatusAdapter.swapStatus(receivedStatus);
+                if(bottomSelected.equals("pictures")) floatStatusAdapter.swapStatus(allPicturePaths);
+                else floatStatusAdapter.swapStatus(allVideoPaths);
+                mGridView.setAdapter(floatStatusAdapter);
                 //Setting up the recycler view
                 swipeRefreshLayout.setRefreshing(false);
             }
@@ -237,6 +268,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
     public void showImagePopup(Point p, final String uri) {
         Intent imageIntent = new Intent(this,MainActivity.class);
         imageIntent.putExtra("STATUS_KEY",uri);
+        imageIntent.setFlags(FLAG_ACTIVITY_NEW_TASK);
         startActivity(imageIntent);
 
     }
@@ -264,18 +296,99 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.navigation_pictures:
-                    statusListAdapter.swapStatus(allPicturePaths);
+                    floatStatusAdapter.swapStatus(allPicturePaths);
                     bottomSelected = "pictures";
                     return true;
                 case R.id.navigation_videos:
                     bottomSelected = "videos";
 
-                    statusListAdapter.swapStatus(allVideoPaths);
+                    floatStatusAdapter.swapStatus(allVideoPaths);
                     return true;
             }
             return false;
         }
 
+    };
+
+    View.OnTouchListener floatButtonTouchListener = new View.OnTouchListener() {
+        private int initialX;
+        private int initialY;
+        private float initialTouchX;
+        private float initialTouchY;
+
+
+        @Override
+        public boolean onTouch(View v, MotionEvent event) {
+            rootDisplay = mWindowManager.getDefaultDisplay();
+            Point size = new Point();
+            rootDisplay.getSize(size);
+            int width = size.x;
+            int height = size.y;
+
+            rootRelativeLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT));
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+//                    closeImageView.setVisibility(View.VISIBLE);
+                    //remember the initial position.
+                    initialX = params.x;
+                    initialY = params.y;
+
+                    //get the touch location
+                    initialTouchX = event.getRawX();
+                    initialTouchY = event.getRawY();
+                    return true;
+                case MotionEvent.ACTION_UP:
+//                    closeImageView.setVisibility(View.VISIBLE);
+                    int Xdiff = (int) (event.getRawX() - initialTouchX);
+                    int Ydiff = (int) (event.getRawY() - initialTouchY);
+
+
+                    //The check for Xdiff <10 && YDiff< 10 because sometime elements moves a little while clicking.
+                    //So that is click event.
+                    if (Xdiff < 10 && Ydiff < 10) {
+                        if (isViewCollapsed()) {
+                            //When user clicks on the image view of the collapsed layout,
+                            //visibility of the collapsed layout will be changed to "View.GONE"
+                            //and expanded view will become visible.
+                            floatingButton.setVisibility(View.GONE);
+                            expandedButton.setVisibility(View.VISIBLE);
+                            expandedLayout.setVisibility(View.VISIBLE);
+                        }
+                    }
+                    return true;
+                case MotionEvent.ACTION_MOVE:
+//                    closeImageView.setVisibility(View.VISIBLE);
+                    //Calculate the X and Y coordinates of the view.
+                    params.x = initialX + (int) (event.getRawX() - initialTouchX);
+                    params.y = initialY + (int) (event.getRawY() - initialTouchY);
+                    //Update the layout with new X & Y coordinate
+                    mWindowManager.updateViewLayout(mFloatingView, params);
+                    return true;
+
+                case MotionEvent.ACTION_HOVER_EXIT:
+                    closeImageView.setVisibility(View.GONE);
+                    rootRelativeLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT));
+                    return true;
+
+            }
+            return false;
+        }
+    };
+
+    private boolean isViewCollapsed() {
+        return mFloatingView == null || mFloatingView.findViewById(R.id.floating_status_head).getVisibility() == View.VISIBLE;
+    }
+
+    public View.OnTouchListener expandedListener = new View.OnTouchListener() {
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            floatingButton.setVisibility(View.VISIBLE);
+            expandedButton.setVisibility(View.GONE);
+            expandedLayout.setVisibility(View.GONE);
+            return true;
+        }
     };
 
 }

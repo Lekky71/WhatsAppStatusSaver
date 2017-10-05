@@ -48,8 +48,5 @@
             app:menu="@menu/navigation" />
     </RelativeLayout>
 
-    <!--android:src="@android:drawable/ic_menu_save"-->
-
-
 
 </android.support.design.widget.CoordinatorLayout>

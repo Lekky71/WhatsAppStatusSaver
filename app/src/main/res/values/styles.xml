@@ -29,4 +29,14 @@
         <item name="android:background">@color/black_overlay</item>
     </style>
 
+
+    <style name="AppBaseThemeTwo" parent="@style/Theme.AppCompat">
+    </style>
+
+    <!-- Application theme. -->
+    <style name="AppThemeTwo" parent="AppBaseThemeTwo">
+        <!-- All customizations that are NOT specific to a particular API-level can go here. -->
+
+    </style>
+
 </resources>

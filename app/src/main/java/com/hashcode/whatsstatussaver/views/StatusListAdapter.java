@@ -142,6 +142,7 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
 
                 }
                 else if(mVideosCheckStates.get(position,false)){
+                    selectedVidoesStatuses.remove(fullStatusPath);
                     Log.e("Selection","It saw it as selected");
                     v.setBackground(null);
                     mVideosCheckStates.delete(position);

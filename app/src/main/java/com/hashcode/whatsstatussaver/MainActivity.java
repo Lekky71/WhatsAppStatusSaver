@@ -12,7 +12,9 @@ import android.content.pm.PackageManager;
 import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.FloatingActionButton;
@@ -23,7 +25,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.SparseBooleanArray;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -54,6 +55,7 @@ import com.google.android.exoplayer2.util.Util;
 import com.hashcode.whatsstatussaver.data.StatusSavingService;
 import com.hashcode.whatsstatussaver.floatingbutton.FloatingButtonService;
 import com.hashcode.whatsstatussaver.views.GlideApp;
+import com.hashcode.whatsstatussaver.views.FloatStatusAdapter;
 import com.hashcode.whatsstatussaver.views.StatusListAdapter;
 
 import java.util.ArrayList;
@@ -78,6 +80,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     private final static String ACTION_FETCH_STATUS = "fetch-status";
     private final static String ACTION_SAVE_STATUS = "save-status";
+    private static final int CODE_DRAW_OVER_OTHER_APP_PERMISSION = 2084;
 
     private FetchStatusReceiver fetchStatusReceiver;
     @Override
@@ -89,6 +92,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         filter.addCategory(Intent.CATEGORY_DEFAULT);
         fetchStatusReceiver = new FetchStatusReceiver();
         registerReceiver(fetchStatusReceiver, filter);
+
         swipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.refresh_layout);
         swipeRefreshLayout.setColorSchemeColors(getResources().getColor(R.color.colorAccent),
                 getResources().getColor(R.color.colorPrimary),
@@ -126,6 +130,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     swipeRefreshLayout.setRefreshing(true);
                     StatusSavingService.performFetch(mContext);
                 }
+
                 else if(numOfSelectedVideos!= 0 &&
                         navigation.getSelectedItemId()==R.id.navigation_videos){
                     StatusSavingService.performSave(mContext,statusListAdapter.getSelectedVidoesStatuses());
@@ -147,6 +152,12 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         });
         swipeRefreshLayout.setOnRefreshListener(this);
         askForContactPermission();
+
+        Intent receivedIntent = getIntent();
+        if(receivedIntent != null){
+            String link = receivedIntent.getStringExtra("STATUS_KEY");
+            if(link!= null) showImagePopup(new Point(0,2),link);
+        }
 
     }
 
@@ -175,8 +186,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         }
         else if(id == R.id.action_help){
             showHelpPopup(MainActivity.this);
-            startService(new Intent(MainActivity.this, FloatingButtonService.class));
             finish();
+            startFloating();
             return true;
         }
         else if(id == R.id.action_share){
@@ -420,5 +431,41 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     protected void onStop() {
         super.onStop();
 //        startService(new Intent(this, FloatingButtonService.class));
+    }
+
+    public void startFloating(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+
+            //If the draw over permission is not available open the settings screen
+            //to grant the permission.
+            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getPackageName()));
+            startActivityForResult(intent, CODE_DRAW_OVER_OTHER_APP_PERMISSION);
+        } else {
+            initializeView();
+        }
+    }
+
+    private void initializeView() {
+        startService(new Intent(MainActivity.this, FloatingButtonService.class));
+        finish();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == CODE_DRAW_OVER_OTHER_APP_PERMISSION) {
+            //Check if the permission is granted or not.
+            if (resultCode == RESULT_OK) {
+                initializeView();
+            } else { //Permission is not available
+                Toast.makeText(this,
+                        "Draw over other app permission not available. Closing the application",
+                        Toast.LENGTH_SHORT).show();
+
+                finish();
+            }
+        } else {
+            super.onActivityResult(requestCode, resultCode, data);
+        }
     }
 }
