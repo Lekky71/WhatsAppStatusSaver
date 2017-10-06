@@ -3,27 +3,27 @@ package com.hashcode.whatsstatussaver.views;
 import android.content.Context;
 import android.graphics.Color;
 import android.net.Uri;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
-import android.widget.VideoView;
+
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.hashcode.whatsstatussaver.R;
+
 import java.io.File;
 import java.util.ArrayList;
 
 /**
- * Created by oluwalekefakorede on 06/09/2017.
+ * Created by oluwalekefakorede on 06/10/2017.
  */
 
-public class StatusListAdapter extends ArrayAdapter<String> implements CompoundButton.OnCheckedChangeListener {
+public class FloatAdapter extends RecyclerView.Adapter<FloatAdapter.FloatViewHolder> implements
+        CompoundButton.OnCheckedChangeListener{
     public SparseBooleanArray mPicturesCheckStates;
     public SparseBooleanArray mVideosCheckStates;
     public ArrayList<String> selectedPicturesStatuses;
@@ -34,8 +34,7 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
     private ArrayList<View> viewArrayList=new ArrayList<>();
     private String folderPath;
 
-    public StatusListAdapter(Context context, ArrayList<String> statuses){
-        super(context,-1,statuses);
+    public FloatAdapter(Context context, ArrayList<String> statuses){
         mContext = context;
         statusPaths = statuses;
         selectedPicturesStatuses = new ArrayList<>();
@@ -43,83 +42,55 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
         mPicturesCheckStates = new SparseBooleanArray(statuses.size());
         mVideosCheckStates = new SparseBooleanArray(statuses.size());
     }
-
-    public ArrayList<String> getSelectedPicturesStatuses() {
-        return selectedPicturesStatuses;
-    }
-
-    public void setSelectedPicturesStatuses(ArrayList<String> selectedPicturesStatuses) {
-        this.selectedPicturesStatuses = selectedPicturesStatuses;
-    }
-
-    public ArrayList<String> getSelectedVidoesStatuses() {
-        return selectedVidoesStatuses;
-    }
-
-    public void setSelectedVidoesStatuses(ArrayList<String> selectedVidoesStatuses) {
-        this.selectedVidoesStatuses = selectedVidoesStatuses;
-    }
-
-    public void setStatusClickListener(StatusClickListener statusClickListener) {
-        this.statusClickListener = statusClickListener;
-    }
-
     @Override
-    public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-
-    }
-
-    public String getFolderPath() {
-        return folderPath;
-    }
-
-    public void setFolderPath(String folderPath) {
-        this.folderPath = folderPath;
-    }
-
-    @NonNull
-    @Override
-    public View getView(final int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+    public FloatViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         Context context = parent.getContext();
         LayoutInflater inflater =  LayoutInflater.from(context);
-        View itemView = inflater.inflate(R.layout.each_status_view, parent, false);
-        Log.e("Loading the vies", "It did so");
-        ImageView statusImageView = (ImageView) itemView.findViewById(R.id.status_image);
-        ImageView playVideoImageView = (ImageView) itemView.findViewById(R.id.video_play_button);
-//        playVideoImageView.setImageDrawable(mContext.getResources().getDrawable(R.drawable.ic_play_video_white_24dp));
-        final String statusPath = statusPaths.get(position);
+        View itemView = inflater.inflate(R.layout.float_status_view, parent, false);
+        return new FloatAdapter.FloatViewHolder(itemView);
+    }
+    @Override
+    public void onBindViewHolder(FloatViewHolder holder,int pos) {
+        final int position = holder.getAdapterPosition();
+        final String statusPath = statusPaths.get(pos);
         final String fullStatusPath = getFolderPath()+"/"+statusPath;
         if(statusPath.endsWith(".jpg")){
-            playVideoImageView.setVisibility(View.INVISIBLE);
+            holder.playVideoImageView.setVisibility(View.INVISIBLE);
             GlideApp.with(mContext).load(fullStatusPath)
-                    .into(statusImageView);
+                    .into(holder.statusImageView);
         }
         else if(statusPath.endsWith(".gif")){
-            playVideoImageView.setVisibility(View.INVISIBLE);
+            holder.playVideoImageView.setVisibility(View.INVISIBLE);
             GlideApp.with(mContext)
                     .load(fullStatusPath)
                     .error(Color.GRAY)
                     .placeholder(Color.GRAY)
                     .diskCacheStrategy(DiskCacheStrategy.DATA)
-                    .into(statusImageView);
+                    .into(holder.statusImageView);
         }
         else if(statusPath.endsWith(".mp4")){
-            playVideoImageView.setVisibility(View.VISIBLE);
+            holder.playVideoImageView.setVisibility(View.VISIBLE);
             GlideApp.with(mContext)
                     .asBitmap()
                     .load(Uri.fromFile(new File(fullStatusPath)))
-                    .into(statusImageView);
+                    .into(holder.statusImageView);
         }
-        itemView.setTag(fullStatusPath);
+        holder.itemView.setTag(fullStatusPath);
+//mPicturesCheckStates.get(position, false) &&
+        if(statusPath.endsWith(".jpg")
+                && selectedPicturesStatuses.contains(fullStatusPath)){
+            holder.itemView.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
+        }
+        //mVideosCheckStates.get(position,false) &&
+        else if(statusPath.endsWith(".mp4") &&
+                selectedVidoesStatuses.contains(fullStatusPath)){
+            holder.itemView.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
+        }
+        else {
+            holder.itemView.setBackground(null);
+        }
 
-        if(mPicturesCheckStates.get(position, false) && statusPath.endsWith(".jpg")){
-            itemView.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
-        }
-        else if(mVideosCheckStates.get(position,false) && statusPath.endsWith(".mp4")){
-            itemView.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
-        }
-
-        itemView.setOnClickListener(new View.OnClickListener() {
+        holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Log.i("Selecting image","it works");
@@ -154,16 +125,61 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
             }
         });
 
-        itemView.setOnLongClickListener(new View.OnLongClickListener() {
+        holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
                 statusClickListener.onStatusLongClick(position,fullStatusPath);
                 return true;
             }
         });
+    }
 
-        return itemView;
+    @Override
+    public int getItemCount() {
+        return statusPaths.size();
+    }
 
+    public ArrayList<String> getSelectedPicturesStatuses() {
+        return selectedPicturesStatuses;
+    }
+
+    public void setSelectedPicturesStatuses(ArrayList<String> selectedPicturesStatuses) {
+        this.selectedPicturesStatuses = selectedPicturesStatuses;
+    }
+
+    public ArrayList<String> getSelectedVidoesStatuses() {
+        return selectedVidoesStatuses;
+    }
+
+    public void setSelectedVidoesStatuses(ArrayList<String> selectedVidoesStatuses) {
+        this.selectedVidoesStatuses = selectedVidoesStatuses;
+    }
+
+    public void setStatusClickListener(FloatAdapter.StatusClickListener statusClickListener) {
+        this.statusClickListener = statusClickListener;
+    }
+
+    @Override
+    public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+
+    }
+
+    public String getFolderPath() {
+        return folderPath;
+    }
+
+    public void setFolderPath(String folderPath) {
+        this.folderPath = folderPath;
+    }
+
+    public class FloatViewHolder extends RecyclerView.ViewHolder {
+        ImageView statusImageView ;
+        ImageView playVideoImageView;
+        public FloatViewHolder(View itemView) {
+            super(itemView);
+            statusImageView = itemView.findViewById(R.id.status_image);
+            playVideoImageView = itemView.findViewById(R.id.video_play_button);
+        }
     }
 
     public void swapStatus(ArrayList<String> data) {
@@ -175,10 +191,6 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
         notifyDataSetChanged();
     }
 
-    @Override
-    public int getCount() {
-        return statusPaths.size();
-    }
 
     public void clearSelectedStatused(){
         for (View v:viewArrayList){
@@ -194,5 +206,6 @@ public class StatusListAdapter extends ArrayAdapter<String> implements CompoundB
     public interface StatusClickListener{
         void onStatusLongClick(int position, String url);
     }
+
 
 }

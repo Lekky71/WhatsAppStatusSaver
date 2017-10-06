@@ -7,10 +7,11 @@ import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.net.Uri;
+import android.os.Environment;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -19,6 +20,8 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Display;
@@ -29,17 +32,23 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import com.andremion.counterfab.CounterFab;
 import com.hashcode.whatsstatussaver.MainActivity;
 import com.hashcode.whatsstatussaver.R;
+import com.hashcode.whatsstatussaver.data.LastModifiedFileComparator;
 import com.hashcode.whatsstatussaver.data.StatusSavingService;
-import com.hashcode.whatsstatussaver.views.FloatStatusAdapter;
+import com.hashcode.whatsstatussaver.views.FloatAdapter;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
@@ -48,7 +57,7 @@ import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
  */
 
 public class FloatingButtonService extends Service implements SwipeRefreshLayout.OnRefreshListener,
-        FloatStatusAdapter.StatusClickListener{
+        FloatAdapter.StatusClickListener{
     private final static String ACTION_FETCH_STATUS = "fetch-status";
     private final static String ACTION_SAVE_STATUS = "save-status";
     final int MY_PERMISSION_REQUEST_WRITE_STORAGE = 100;
@@ -63,9 +72,9 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
     ArrayList<String> allVideoPaths;
     SwipeRefreshLayout swipeRefreshLayout;
     //Using ListView
-    GridView mGridView;
+    RecyclerView mRecyclerView;
     BottomNavigationView navigation;
-    FloatStatusAdapter floatStatusAdapter;
+    FloatAdapter floatAdapter;
 
     CounterFab floatingButton;
     FloatingActionButton expandedButton;
@@ -160,13 +169,13 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         public boolean onNavigationItemSelected(@NonNull MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.navigation_pictures:
-                    floatStatusAdapter.swapStatus(allPicturePaths);
+                    floatAdapter.swapStatus(allPicturePaths);
                     bottomSelected = "pictures";
                     return true;
                 case R.id.navigation_videos:
                     bottomSelected = "videos";
 
-                    floatStatusAdapter.swapStatus(allVideoPaths);
+                    floatAdapter.swapStatus(allVideoPaths);
                     return true;
             }
             return false;
@@ -200,10 +209,10 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         rootRelativeLayout = mFloatingView.findViewById(R.id.float_overall_layout);
         ////
         isButtonClosed = true;
-        IntentFilter filter = new IntentFilter(FetchStatusReceiver.PROCESS_FETCH);
-        filter.addCategory(Intent.CATEGORY_DEFAULT);
-        fetchStatusReceiver = new FetchStatusReceiver();
-        registerReceiver(fetchStatusReceiver, filter);
+//        IntentFilter filter = new IntentFilter(FetchStatusReceiver.PROCESS_FETCH);
+//        filter.addCategory(Intent.CATEGORY_DEFAULT);
+//        fetchStatusReceiver = new FetchStatusReceiver();
+//        registerReceiver(fetchStatusReceiver, filter);
         swipeRefreshLayout = (SwipeRefreshLayout) mFloatingView.findViewById(R.id.refresh_layout);
         swipeRefreshLayout.setColorSchemeColors(getResources().getColor(R.color.colorAccent),
                 getResources().getColor(R.color.colorPrimary),
@@ -214,11 +223,15 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         selectedStatuses = new ArrayList<>();
         allPicturePaths = new ArrayList<>();
         allVideoPaths = new ArrayList<>();
-        mGridView = (GridView) mFloatingView.findViewById(R.id.status_grid_view);
-        mGridView.setColumnWidth(3);
-        floatStatusAdapter = new FloatStatusAdapter(mContext,allStatusPaths);
+        mRecyclerView = mFloatingView.findViewById(R.id.status_grid_view);
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this,3);
+        gridLayoutManager.setAutoMeasureEnabled(true);
+        mRecyclerView.setLayoutManager(gridLayoutManager);
 
-        floatStatusAdapter.setStatusClickListener(this);
+
+        floatAdapter = new FloatAdapter(mContext,allStatusPaths);
+
+        floatAdapter.setStatusClickListener(this);
 
         navigation = (BottomNavigationView) mFloatingView.findViewById(R.id.main_bottom_navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
@@ -230,27 +243,31 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                int numOfSelectedPic = floatStatusAdapter.getSelectedPicturesStatuses().size();
-                int numOfSelectedVideos = floatStatusAdapter.getSelectedVidoesStatuses().size();
+                int numOfSelectedPic = floatAdapter.getSelectedPicturesStatuses().size();
+                int numOfSelectedVideos = floatAdapter.getSelectedVidoesStatuses().size();
                 if( numOfSelectedPic!= 0 &&
                         navigation.getSelectedItemId()==R.id.navigation_pictures){
-                    StatusSavingService.performSave(mContext, floatStatusAdapter.getSelectedPicturesStatuses());
+                    saveAllSelectedStatus(floatAdapter.getSelectedPicturesStatuses());
                     String message = numOfSelectedPic == 1 ? "Picture saved" : numOfSelectedPic+" pictures saved";
-                    floatStatusAdapter.mPicturesCheckStates.clear();
+                    floatAdapter.mPicturesCheckStates.clear();
                     Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show();
-                    floatStatusAdapter.setSelectedPicturesStatuses(new ArrayList<String>());
+                    floatAdapter.setSelectedPicturesStatuses(new ArrayList<String>());
                     swipeRefreshLayout.setRefreshing(true);
-                    StatusSavingService.performFetch(mContext);
+//                    StatusSavingService.performFetch(mContext);
+                    //TODO 1
+                    fetchStatuses();
                 }
                 else if(numOfSelectedVideos!= 0 &&
                         navigation.getSelectedItemId()==R.id.navigation_videos){
-                    StatusSavingService.performSave(mContext, floatStatusAdapter.getSelectedVidoesStatuses());
+                    saveAllSelectedStatus(floatAdapter.getSelectedPicturesStatuses());
                     String message = numOfSelectedVideos == 1 ?  "Video saved" : numOfSelectedVideos + " videos saved";
-                    floatStatusAdapter.mVideosCheckStates.clear();
+                    floatAdapter.mVideosCheckStates.clear();
                     Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show();
-                    floatStatusAdapter.setSelectedVidoesStatuses(new ArrayList<String>());
+                    floatAdapter.setSelectedVidoesStatuses(new ArrayList<String>());
                     swipeRefreshLayout.setRefreshing(true);
-                    StatusSavingService.performFetch(mContext);
+//                    StatusSavingService.performFetch(mContext);
+                    //TODO 2
+                    fetchStatuses();
 //                    navigation.setSelectedItemId(R.id.navigation_pictures);
                 }
                 else{
@@ -297,8 +314,10 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
 
     @Override
     public void onRefresh() {
-        StatusSavingService.performFetch(mContext);
-        floatStatusAdapter.clearSelectedStatused();
+//        StatusSavingService.performFetch(mContext);
+        fetchStatuses();
+        //TODO 5
+        floatAdapter.clearSelectedStatused();
     }
 
     @Override
@@ -330,11 +349,15 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
             if(permissionCheck != PackageManager.PERMISSION_GRANTED){
                 //close the app
             }else{
-                StatusSavingService.performFetch(mContext);
+//                StatusSavingService.performFetch(mContext);
+                fetchStatuses();
+                //TODO 3
             }
         }
         else{
-            StatusSavingService.performFetch(mContext);
+//            StatusSavingService.performFetch(mContext);
+            fetchStatuses();
+            //TODO 4
         }
     }
 
@@ -351,7 +374,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         public void onReceive(Context context, Intent intent) {
             boolean hasWhatsApp = intent.getBooleanExtra("the-user-has-whatsapp",true);
             if(!hasWhatsApp){
-                Snackbar.make(mGridView,"Sorry, you do not have WhatsApp Installed",Snackbar.LENGTH_LONG).show();
+                Snackbar.make(mRecyclerView,"Sorry, you do not have WhatsApp Installed",Snackbar.LENGTH_LONG).show();
             }
             else {
                 ArrayList<String> receivedStatus = intent.getStringArrayListExtra(StatusSavingService.FETCHED_STATUSES);
@@ -364,15 +387,148 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
                         allVideoPaths.add(path);
                     }
                 }
-                floatStatusAdapter.setFolderPath(intent.getStringExtra(StatusSavingService.FOLDER_PATH));
-//            floatStatusAdapter.swapStatus(receivedStatus);
-                if(bottomSelected.equals("pictures")) floatStatusAdapter.swapStatus(allPicturePaths);
-                else floatStatusAdapter.swapStatus(allVideoPaths);
-                mGridView.setAdapter(floatStatusAdapter);
+                floatAdapter.setFolderPath(intent.getStringExtra(StatusSavingService.FOLDER_PATH));
+//            floatAdapter.swapStatus(receivedStatus);
+                if(bottomSelected.equals("pictures")) floatAdapter.swapStatus(allPicturePaths);
+                else floatAdapter.swapStatus(allVideoPaths);
+                mRecyclerView.setAdapter(floatAdapter);
                 //Setting up the recycler view
                 swipeRefreshLayout.setRefreshing(false);
             }
         }
     }
 
+
+    private ArrayList<String> fetchAllStatus(){
+        String foldPath = new StringBuffer().append(Environment.getExternalStorageDirectory()
+                .getAbsolutePath()).append("/WhatsApp/Media/.Statuses/").toString();
+
+        File f = new File(foldPath);
+        if(f.exists()){
+        }
+        else{
+            Intent broadcastIntent = new Intent();
+            broadcastIntent.setAction(MainActivity.FetchStatusReceiver.PROCESS_FETCH);
+            broadcastIntent.addCategory(Intent.CATEGORY_DEFAULT);
+            broadcastIntent.putExtra("the-user-has-whatsapp",false);
+            sendBroadcast(broadcastIntent);
+            return null;
+        }
+
+        File files[] = f.listFiles();
+        Arrays.sort(files, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
+        ArrayList<String> statuses = new ArrayList<>();
+        for(int i=0; i < files.length; i++){
+            statuses.add(files[i].getName());
+            //here populate your listview
+        }
+        return statuses;
+    }
+
+
+    private void saveAllSelectedStatus(ArrayList<String> statuses){
+        String fileType = Environment.DIRECTORY_PICTURES;
+        for(String status : statuses){
+            if(status.endsWith(".jpg")){
+                fileType = "Pictures";
+            }else if(status.endsWith(".gif")){
+                fileType ="Gifs";
+            }else if(status.endsWith(".mp4")){
+                fileType="Videos";
+            }
+            String [] splitStatus = status.split("/");
+            String destinationFilename = android.os.Environment.getExternalStorageDirectory().getAbsolutePath()
+                    +"/WhatsAppSaver"+File.separatorChar+splitStatus[splitStatus.length-1];
+            try {
+                copyFile(new File(status),new File(destinationFilename));
+                Intent intent = new Intent("android.intent.action.MEDIA_SCANNER_SCAN_FILE");
+                intent.setData(Uri.fromFile(new File(destinationFilename)));
+                sendBroadcast(intent);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void copyFile(File file, File file2) throws IOException {
+        Throwable th;
+        Throwable th2;
+        if (!file2.getParentFile().exists()) {
+            file2.getParentFile().mkdirs();
+        }
+        if (!file2.exists()) {
+            file2.createNewFile();
+        }
+        FileChannel fileChannel = (FileChannel) null;
+        FileChannel fileChannel2 = (FileChannel) null;
+        FileChannel channel;
+        try {
+            channel = new FileInputStream(file).getChannel();
+            try {
+                fileChannel = new FileOutputStream(file2).getChannel();
+            } catch (Throwable th3) {
+                th = th3;
+                if (channel != null) {
+                    channel.close();
+                }
+                if (fileChannel2 != null) {
+                    fileChannel2.close();
+                }
+                throw th;
+            }
+            try {
+                fileChannel.transferFrom(channel, (long) 0, channel.size());
+                if (channel != null) {
+                    channel.close();
+                }
+                if (fileChannel != null) {
+                    fileChannel.close();
+                }
+            } catch (Throwable th4) {
+                th2 = th4;
+                fileChannel2 = fileChannel;
+                th = th2;
+                if (channel != null) {
+                    channel.close();
+                }
+                if (fileChannel2 != null) {
+                    fileChannel2.close();
+                }
+                throw th;
+            }
+        } catch (Throwable th5) {
+            th2 = th5;
+            channel = fileChannel;
+            th = th2;
+            if (channel != null) {
+                channel.close();
+            }
+            if (fileChannel2 != null) {
+                fileChannel2.close();
+            }
+        }
+    }
+
+    public void fetchStatuses(){
+        ArrayList<String> receivedStatus = fetchAllStatus();
+        allPicturePaths.clear();
+        allVideoPaths.clear();
+        for(String path : receivedStatus){
+            if(path.endsWith(".jpg")){
+                allPicturePaths.add(path);
+            }else if(path.endsWith(".mp4")){
+                allVideoPaths.add(path);
+            }
+        }
+        String foldPath = Environment.getExternalStorageDirectory()
+                .getAbsolutePath() +
+                "/WhatsApp/Media/.Statuses/";
+        floatAdapter.setFolderPath(foldPath);
+//            floatAdapter.swapStatus(receivedStatus);
+        if(bottomSelected.equals("pictures")) floatAdapter.swapStatus(allPicturePaths);
+        else floatAdapter.swapStatus(allVideoPaths);
+        mRecyclerView.setAdapter(floatAdapter);
+        //Setting up the recycler view
+        swipeRefreshLayout.setRefreshing(false);
+    }
 }

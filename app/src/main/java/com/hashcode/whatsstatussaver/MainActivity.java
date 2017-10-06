@@ -24,6 +24,8 @@ import android.support.v4.app.ShareCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -31,7 +33,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -54,13 +55,13 @@ import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 import com.hashcode.whatsstatussaver.data.StatusSavingService;
 import com.hashcode.whatsstatussaver.floatingbutton.FloatingButtonService;
+import com.hashcode.whatsstatussaver.views.FloatAdapter;
 import com.hashcode.whatsstatussaver.views.GlideApp;
-import com.hashcode.whatsstatussaver.views.StatusListAdapter;
 
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener,
-        StatusListAdapter.StatusClickListener{
+        FloatAdapter.StatusClickListener{
     private final static String ACTION_FETCH_STATUS = "fetch-status";
     private final static String ACTION_SAVE_STATUS = "save-status";
     private static final int CODE_DRAW_OVER_OTHER_APP_PERMISSION = 2084;
@@ -74,9 +75,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     ArrayList<String> allVideoPaths;
     SwipeRefreshLayout swipeRefreshLayout;
     //Using ListView
-    GridView mGridView;
+    RecyclerView mRecyclerView;
     BottomNavigationView navigation;
-    StatusListAdapter statusListAdapter;
+    FloatAdapter statusListAdapter;
     private FetchStatusReceiver fetchStatusReceiver;
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -119,9 +120,11 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         selectedStatuses = new ArrayList<>();
         allPicturePaths = new ArrayList<>();
         allVideoPaths = new ArrayList<>();
-        mGridView = (GridView) findViewById(R.id.status_grid_view);
-        mGridView.setColumnWidth(3);
-        statusListAdapter = new StatusListAdapter(mContext,allStatusPaths);
+        mRecyclerView = findViewById(R.id.status_grid_view);
+        GridLayoutManager gridLayoutManager = new GridLayoutManager(this,3);
+        gridLayoutManager.setAutoMeasureEnabled(true);
+        mRecyclerView.setLayoutManager(gridLayoutManager);
+        statusListAdapter = new FloatAdapter(mContext,allStatusPaths);
 
         statusListAdapter.setStatusClickListener(this);
 
@@ -438,7 +441,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         public void onReceive(Context context, Intent intent) {
             boolean hasWhatsApp = intent.getBooleanExtra("the-user-has-whatsapp",true);
             if(!hasWhatsApp){
-                Snackbar.make(mGridView,"Sorry, you do not have WhatsApp Installed",Snackbar.LENGTH_LONG).show();
+                Snackbar.make(mRecyclerView,"Sorry, you do not have WhatsApp Installed",Snackbar.LENGTH_LONG).show();
             }
             else {
                 ArrayList<String> receivedStatus = intent.getStringArrayListExtra(StatusSavingService.FETCHED_STATUSES);
@@ -455,7 +458,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 //            statusListAdapter.swapStatus(receivedStatus);
                 if(bottomSelected.equals("pictures")) statusListAdapter.swapStatus(allPicturePaths);
                 else statusListAdapter.swapStatus(allVideoPaths);
-                mGridView.setAdapter(statusListAdapter);
+                mRecyclerView.setAdapter(statusListAdapter);
                 //Setting up the recycler view
                 swipeRefreshLayout.setRefreshing(false);
             }
