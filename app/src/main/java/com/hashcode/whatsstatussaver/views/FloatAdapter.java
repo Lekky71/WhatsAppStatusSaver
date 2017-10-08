@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.SparseBooleanArray;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -47,6 +48,10 @@ public class FloatAdapter extends RecyclerView.Adapter<FloatAdapter.FloatViewHol
         Context context = parent.getContext();
         LayoutInflater inflater =  LayoutInflater.from(context);
         View itemView = inflater.inflate(R.layout.float_status_view, parent, false);
+//        int height = parent.getMeasuredHeight() / 4;
+//        int width = parent.getMinimumWidth() /3;
+//        itemView.setMinimumHeight(height);
+//        itemView.setMinimumWidth(width);
         return new FloatAdapter.FloatViewHolder(itemView);
     }
     @Override
@@ -179,6 +184,13 @@ public class FloatAdapter extends RecyclerView.Adapter<FloatAdapter.FloatViewHol
             super(itemView);
             statusImageView = itemView.findViewById(R.id.status_image);
             playVideoImageView = itemView.findViewById(R.id.video_play_button);
+
+            //fixed the width and height issue
+            int dimensionInDp = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 120,
+                    mContext.getResources().getDisplayMetrics());
+            statusImageView.getLayoutParams().height = dimensionInDp;
+            statusImageView.getLayoutParams().width = dimensionInDp;
+
         }
     }
 

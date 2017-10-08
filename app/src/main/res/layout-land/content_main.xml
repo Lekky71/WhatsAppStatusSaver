@@ -26,11 +26,11 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <android.support.v7.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
+        <android.support.v7.widget.RecyclerView
+            xmlns:android="http://schemas.android.com/apk/res/android"
             android:id="@+id/status_grid_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:numColumns="5"
             android:scrollbars="vertical"
             android:smoothScrollbar="true" />
 

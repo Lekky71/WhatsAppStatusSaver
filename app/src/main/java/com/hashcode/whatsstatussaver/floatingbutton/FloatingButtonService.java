@@ -18,6 +18,7 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ShareCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.GridLayoutManager;
@@ -25,6 +26,7 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Display;
+import android.view.DragEvent;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -34,6 +36,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import com.andremion.counterfab.CounterFab;
 import com.hashcode.whatsstatussaver.MainActivity;
@@ -49,6 +52,7 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
 
@@ -76,6 +80,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
     BottomNavigationView navigation;
     FloatAdapter floatAdapter;
 
+    ImageView shareImageView;
     CounterFab floatingButton;
     FloatingActionButton expandedButton;
     RelativeLayout expandedLayout;
@@ -153,15 +158,14 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
 
                 case MotionEvent.ACTION_HOVER_EXIT:
                     closeImageView.setVisibility(View.GONE);
-                    rootRelativeLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT));
+//                    rootRelativeLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+//                            ViewGroup.LayoutParams.WRAP_CONTENT));
                     return true;
 
             }
             return false;
         }
     };
-    private FloatingButtonService.FetchStatusReceiver fetchStatusReceiver;
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
 
@@ -206,6 +210,8 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         expandedLayout = mFloatingView.findViewById(R.id.expanded_root_view);
         closeImageView = mFloatingView.findViewById(R.id.floating_close_button);
 
+        shareImageView = mFloatingView.findViewById(R.id.float_share_button);
+
         rootRelativeLayout = mFloatingView.findViewById(R.id.float_overall_layout);
         ////
         isButtonClosed = true;
@@ -240,6 +246,16 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         expandedButton.setOnTouchListener(expandedListener);
         //Button to save the statuses.
         FloatingActionButton fab = mFloatingView.findViewById(R.id.fab);
+
+        shareImageView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent imageIntent = new Intent(FloatingButtonService.this,MainActivity.class);
+                imageIntent.putExtra("share-app","share this app");
+                imageIntent.setFlags(FLAG_ACTIVITY_NEW_TASK);
+                startActivity(imageIntent);
+            }
+        });
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -253,8 +269,6 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
                     Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show();
                     floatAdapter.setSelectedPicturesStatuses(new ArrayList<String>());
                     swipeRefreshLayout.setRefreshing(true);
-//                    StatusSavingService.performFetch(mContext);
-                    //TODO 1
                     fetchStatuses();
                 }
                 else if(numOfSelectedVideos!= 0 &&
@@ -265,10 +279,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
                     Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show();
                     floatAdapter.setSelectedVidoesStatuses(new ArrayList<String>());
                     swipeRefreshLayout.setRefreshing(true);
-//                    StatusSavingService.performFetch(mContext);
-                    //TODO 2
                     fetchStatuses();
-//                    navigation.setSelectedItemId(R.id.navigation_pictures);
                 }
                 else{
                     String typeMessage = navigation.getSelectedItemId() == R.id.navigation_pictures ?
@@ -280,15 +291,12 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         });
         swipeRefreshLayout.setOnRefreshListener(this);
         askForContactPermission();
-        /////
-
 
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        this.unregisterReceiver(fetchStatusReceiver);
         if (mFloatingView != null) mWindowManager.removeView(mFloatingView);
 
     }
@@ -349,15 +357,11 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
             if(permissionCheck != PackageManager.PERMISSION_GRANTED){
                 //close the app
             }else{
-//                StatusSavingService.performFetch(mContext);
                 fetchStatuses();
-                //TODO 3
             }
         }
         else{
-//            StatusSavingService.performFetch(mContext);
             fetchStatuses();
-            //TODO 4
         }
     }
 
@@ -368,36 +372,6 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
     /*
         Receiver for displaying the status after the background fetch.
      */
-    public class FetchStatusReceiver extends BroadcastReceiver {
-        public static final String PROCESS_FETCH = "setup-all-views";
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            boolean hasWhatsApp = intent.getBooleanExtra("the-user-has-whatsapp",true);
-            if(!hasWhatsApp){
-                Snackbar.make(mRecyclerView,"Sorry, you do not have WhatsApp Installed",Snackbar.LENGTH_LONG).show();
-            }
-            else {
-                ArrayList<String> receivedStatus = intent.getStringArrayListExtra(StatusSavingService.FETCHED_STATUSES);
-                allPicturePaths.clear();
-                allVideoPaths.clear();
-                for(String path : receivedStatus){
-                    if(path.endsWith(".jpg")){
-                        allPicturePaths.add(path);
-                    }else if(path.endsWith(".mp4")){
-                        allVideoPaths.add(path);
-                    }
-                }
-                floatAdapter.setFolderPath(intent.getStringExtra(StatusSavingService.FOLDER_PATH));
-//            floatAdapter.swapStatus(receivedStatus);
-                if(bottomSelected.equals("pictures")) floatAdapter.swapStatus(allPicturePaths);
-                else floatAdapter.swapStatus(allVideoPaths);
-                mRecyclerView.setAdapter(floatAdapter);
-                //Setting up the recycler view
-                swipeRefreshLayout.setRefreshing(false);
-            }
-        }
-    }
-
 
     private ArrayList<String> fetchAllStatus(){
         String foldPath = new StringBuffer().append(Environment.getExternalStorageDirectory()
@@ -415,12 +389,17 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
             return null;
         }
 
+        Date currentDate = new Date();
+        long cTime = currentDate.getTime();
         File files[] = f.listFiles();
         Arrays.sort(files, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
         ArrayList<String> statuses = new ArrayList<>();
-        for(int i=0; i < files.length; i++){
-            statuses.add(files[i].getName());
-            //here populate your listview
+        for (int i = 0; i < files.length; i++) {
+            long diff = cTime - files[i].lastModified();
+            if (diff <= (24 * 60 * 60 * 1000)) {
+                statuses.add(files[i].getName());
+
+            }            //here populate your listview
         }
         return statuses;
     }
@@ -530,5 +509,13 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         mRecyclerView.setAdapter(floatAdapter);
         //Setting up the recycler view
         swipeRefreshLayout.setRefreshing(false);
+    }
+
+    public int checkAddedStatuses(){
+        String foldPath = new StringBuffer().append(Environment.getExternalStorageDirectory()
+                .getAbsolutePath()).append("/WhatsApp/Media/.Statuses/").toString();
+
+        File f = new File(foldPath);
+        return 0;
     }
 }

@@ -19,12 +19,9 @@
         android:layout_height="495dp"
         tools:layout_editor_absoluteY="8dp"
         tools:layout_editor_absoluteX="8dp">
-    <android.support.v7.widget.RecyclerView xmlns:android="http://schemas.android.com/apk/res/android"
+    <android.support.v7.widget.RecyclerView
         android:id="@+id/status_grid_view"
-        android:layout_width="match_parent"
-        android:scrollbars="vertical"
-        android:smoothScrollbar="true"
-        android:numColumns="3"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content" />
 
     </android.support.v4.widget.SwipeRefreshLayout>

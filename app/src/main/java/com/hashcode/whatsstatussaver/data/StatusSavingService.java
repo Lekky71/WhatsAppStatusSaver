@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Environment;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import com.hashcode.whatsstatussaver.MainActivity;
 
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 
 /**
  * Created by oluwalekefakorede on 03/09/2017.
@@ -74,12 +76,17 @@ public class StatusSavingService extends IntentService {
             return;
         }
 
+        Date currentDate = new Date();
+        long cTime = currentDate.getTime();
         File files[] = f.listFiles();
         Arrays.sort(files, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
         ArrayList<String> statuses = new ArrayList<>();
         for(int i=0; i < files.length; i++){
-            statuses.add(files[i].getName());
-            //here populate your listview
+            long diff =  cTime - files[i].lastModified();
+            if(diff<= (24*60*60*1000)){
+                statuses.add(files[i].getName());
+
+            }            //here populate your listview
         }
         sendFetchBroadCast(statuses,foldPath);
 

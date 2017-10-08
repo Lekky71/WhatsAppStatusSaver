@@ -8,7 +8,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
@@ -61,7 +63,7 @@ import com.hashcode.whatsstatussaver.views.GlideApp;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener,
-        FloatAdapter.StatusClickListener{
+        FloatAdapter.StatusClickListener {
     private final static String ACTION_FETCH_STATUS = "fetch-status";
     private final static String ACTION_SAVE_STATUS = "save-status";
     private static final int CODE_DRAW_OVER_OTHER_APP_PERMISSION = 2084;
@@ -78,6 +80,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     RecyclerView mRecyclerView;
     BottomNavigationView navigation;
     FloatAdapter statusListAdapter;
+    int cells = 3;
+    //SharedPref
+    boolean isFloatingAllowed;
     private FetchStatusReceiver fetchStatusReceiver;
     private BottomNavigationView.OnNavigationItemSelectedListener mOnNavigationItemSelectedListener
             = new BottomNavigationView.OnNavigationItemSelectedListener() {
@@ -98,11 +103,21 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         }
 
     };
+    private int orientation;
+
+    SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        sharedPreferences = getSharedPreferences("settings-pref", MODE_PRIVATE);
+        isFloatingAllowed = sharedPreferences.getBoolean("floating-allowed", false);
+        orientation = this.getResources().getConfiguration().orientation;
+
+        if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            cells = 5;
+        }
 
         IntentFilter filter = new IntentFilter(FetchStatusReceiver.PROCESS_FETCH);
         filter.addCategory(Intent.CATEGORY_DEFAULT);
@@ -121,10 +136,12 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         allPicturePaths = new ArrayList<>();
         allVideoPaths = new ArrayList<>();
         mRecyclerView = findViewById(R.id.status_grid_view);
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(this,3);
-        gridLayoutManager.setAutoMeasureEnabled(true);
+        RecyclerView.LayoutManager gridLayoutManager = new GridLayoutManager(this, cells);
+
         mRecyclerView.setLayoutManager(gridLayoutManager);
-        statusListAdapter = new FloatAdapter(mContext,allStatusPaths);
+        gridLayoutManager.setAutoMeasureEnabled(true);
+
+        statusListAdapter = new FloatAdapter(mContext, allStatusPaths);
 
         statusListAdapter.setStatusClickListener(this);
 
@@ -138,29 +155,26 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             public void onClick(View view) {
                 int numOfSelectedPic = statusListAdapter.getSelectedPicturesStatuses().size();
                 int numOfSelectedVideos = statusListAdapter.getSelectedVidoesStatuses().size();
-                if( numOfSelectedPic!= 0 &&
-                        navigation.getSelectedItemId()==R.id.navigation_pictures){
-                    StatusSavingService.performSave(mContext,statusListAdapter.getSelectedPicturesStatuses());
-                    String message = numOfSelectedPic == 1 ? "Picture saved" : numOfSelectedPic+" pictures saved";
+                if (numOfSelectedPic != 0 &&
+                        navigation.getSelectedItemId() == R.id.navigation_pictures) {
+                    StatusSavingService.performSave(mContext, statusListAdapter.getSelectedPicturesStatuses());
+                    String message = numOfSelectedPic == 1 ? "Picture saved" : numOfSelectedPic + " pictures saved";
                     statusListAdapter.mPicturesCheckStates.clear();
                     Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show();
                     statusListAdapter.setSelectedPicturesStatuses(new ArrayList<String>());
                     swipeRefreshLayout.setRefreshing(true);
                     StatusSavingService.performFetch(mContext);
-                }
-
-                else if(numOfSelectedVideos!= 0 &&
-                        navigation.getSelectedItemId()==R.id.navigation_videos){
-                    StatusSavingService.performSave(mContext,statusListAdapter.getSelectedVidoesStatuses());
-                    String message = numOfSelectedVideos == 1 ?  "Video saved" : numOfSelectedVideos + " videos saved";
+                } else if (numOfSelectedVideos != 0 &&
+                        navigation.getSelectedItemId() == R.id.navigation_videos) {
+                    StatusSavingService.performSave(mContext, statusListAdapter.getSelectedVidoesStatuses());
+                    String message = numOfSelectedVideos == 1 ? "Video saved" : numOfSelectedVideos + " videos saved";
                     statusListAdapter.mVideosCheckStates.clear();
                     Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show();
                     statusListAdapter.setSelectedVidoesStatuses(new ArrayList<String>());
                     swipeRefreshLayout.setRefreshing(true);
                     StatusSavingService.performFetch(mContext);
 //                    navigation.setSelectedItemId(R.id.navigation_pictures);
-                }
-                else{
+                } else {
                     String typeMessage = navigation.getSelectedItemId() == R.id.navigation_pictures ?
                             "No picture selected" : "No video selected";
                     Snackbar.make(navigation, typeMessage, Snackbar.LENGTH_SHORT).show();
@@ -172,9 +186,19 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         askForContactPermission();
 
         Intent receivedIntent = getIntent();
-        if(receivedIntent != null){
+        if (receivedIntent != null) {
             String link = receivedIntent.getStringExtra("STATUS_KEY");
-            if(link!= null) showImagePopup(new Point(0,2),link);
+            String shareApp = receivedIntent.getStringExtra("share-app");
+            if (link != null) showImagePopup(new Point(0, 2), link);
+            else if(shareApp != null) {
+                String mimeType = "text/plain";
+                String title = "Share  WhatsApp Status Saver App";
+                ShareCompat.IntentBuilder.from(this)
+                        .setType(mimeType)
+                        .setChooserTitle(title)
+                        .setText(getResources().getString(R.string.share_text))
+                        .startChooser();
+            }
         }
 
     }
@@ -201,21 +225,22 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             swipeRefreshLayout.setRefreshing(true);
             StatusSavingService.performFetch(mContext);
             return true;
-        }
-        else if(id == R.id.action_help){
+        } else if (id == R.id.action_help) {
             showHelpPopup(MainActivity.this);
-            finish();
-            startFloating();
             return true;
-        }
-        else if(id == R.id.action_share){
-            String mimeType="text/plain";
+        } else if (id == R.id.action_share) {
+            String mimeType = "text/plain";
             String title = "Share  WhatsApp Status Saver App";
             ShareCompat.IntentBuilder.from(this)
                     .setType(mimeType)
                     .setChooserTitle(title)
                     .setText(getResources().getString(R.string.share_text))
                     .startChooser();
+            return true;
+        } else if (id == R.id.action_settings) {
+            Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+            startActivity(intent);
+            return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -228,7 +253,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     @Override
     public void onStatusLongClick(int position, String url) {
-        showImagePopup(new Point(0,2),url);
+        showImagePopup(new Point(0, 2), url);
     }
 
     private void showHelpPopup(final Activity context) {
@@ -280,11 +305,10 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         FloatingActionButton close = (FloatingActionButton) dialog.findViewById(R.id.close_image_popup_button);
         ImageView statusImage = (ImageView) dialog.findViewById(R.id.full_status_image_view);
         final SimpleExoPlayerView simpleExoPlayerView = dialog.findViewById(R.id.full_status_video_view);
-        final SimpleExoPlayer player ;
-        if(uri.endsWith(".jpg")){
+        final SimpleExoPlayer player;
+        if (uri.endsWith(".jpg")) {
             GlideApp.with(context).load(uri).fitCenter().into(statusImage);
-        }
-        else if(uri.endsWith(".mp4")){
+        } else if (uri.endsWith(".mp4")) {
             statusImage.setVisibility(View.GONE);
             simpleExoPlayerView.setVisibility(View.VISIBLE);
             Uri myUri = Uri.parse(uri); // initialize Uri here
@@ -343,31 +367,29 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     }
 
 
-    public void askForContactPermission(){
+    public void askForContactPermission() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             int permissionCheck = ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
-            if(permissionCheck != PackageManager.PERMISSION_GRANTED){
-                ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MY_PERMISSION_REQUEST_WRITE_STORAGE);
+            if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, MY_PERMISSION_REQUEST_WRITE_STORAGE);
 
-            }else{
+            } else {
                 StatusSavingService.performFetch(mContext);
             }
-        }
-        else{
+        } else {
             StatusSavingService.performFetch(mContext);
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        switch (requestCode){
+        switch (requestCode) {
             case MY_PERMISSION_REQUEST_WRITE_STORAGE:
-                if(grantResults.length>0 && grantResults[0]==PackageManager.PERMISSION_GRANTED){
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     StatusSavingService.performFetch(mContext);
-                }
-                else {
-                    Toast.makeText(getBaseContext(),"Sorry, This app cannot work on your device",Toast.LENGTH_LONG).show();
-                    startActivity(new Intent(this,MainActivity.class));
+                } else {
+                    Toast.makeText(getBaseContext(), "Sorry, This app cannot work on your device", Toast.LENGTH_LONG).show();
+                    startActivity(new Intent(this, MainActivity.class));
                     finish();
                 }
                 return;
@@ -376,27 +398,34 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     /**
      * If SelectedStatuses is not empty, clear the selected Views first and if empty, close the app.
-     * */
+     */
     @Override
     public void onBackPressed() {
-        if (statusListAdapter.getSelectedPicturesStatuses().size()==0 ||
-                statusListAdapter.getSelectedVidoesStatuses().size()==0) super.onBackPressed();
+        if (statusListAdapter.getSelectedPicturesStatuses().size() == 0 ||
+                statusListAdapter.getSelectedVidoesStatuses().size() == 0) super.onBackPressed();
         else statusListAdapter.clearSelectedStatused();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-//        startService(new Intent(this, FloatingButtonService.class));
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-//        startService(new Intent(this, FloatingButtonService.class));
+        isFloatingAllowed = sharedPreferences.getBoolean("floating-allowed", false);
+        if (isFloatingAllowed) startFloating();
     }
 
-    public void startFloating(){
+    @Override
+    protected void onResume() {
+        super.onResume();
+        isFloatingAllowed = sharedPreferences.getBoolean("floating-allowed", false);
+        stopFloating();
+    }
+
+    public void startFloating() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
 
             //If the draw over permission is not available open the settings screen
@@ -409,9 +438,12 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         }
     }
 
+    public void stopFloating() {
+        stopService(new Intent(MainActivity.this, FloatingButtonService.class));
+    }
+
     private void initializeView() {
         startService(new Intent(MainActivity.this, FloatingButtonService.class));
-        finish();
     }
 
     @Override
@@ -435,28 +467,29 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     /*
         Receiver for displaying the status after the background fetch.
      */
-    public class FetchStatusReceiver extends BroadcastReceiver{
+    public class FetchStatusReceiver extends BroadcastReceiver {
         public static final String PROCESS_FETCH = "setup-all-views";
+
         @Override
         public void onReceive(Context context, Intent intent) {
-            boolean hasWhatsApp = intent.getBooleanExtra("the-user-has-whatsapp",true);
-            if(!hasWhatsApp){
-                Snackbar.make(mRecyclerView,"Sorry, you do not have WhatsApp Installed",Snackbar.LENGTH_LONG).show();
-            }
-            else {
+            boolean hasWhatsApp = intent.getBooleanExtra("the-user-has-whatsapp", true);
+            if (!hasWhatsApp) {
+                Snackbar.make(mRecyclerView, "Sorry, you do not have WhatsApp Installed", Snackbar.LENGTH_LONG).show();
+            } else {
                 ArrayList<String> receivedStatus = intent.getStringArrayListExtra(StatusSavingService.FETCHED_STATUSES);
                 allPicturePaths.clear();
                 allVideoPaths.clear();
-                for(String path : receivedStatus){
-                    if(path.endsWith(".jpg")){
+                for (String path : receivedStatus) {
+                    if (path.endsWith(".jpg")) {
                         allPicturePaths.add(path);
-                    }else if(path.endsWith(".mp4")){
+                    } else if (path.endsWith(".mp4")) {
                         allVideoPaths.add(path);
                     }
                 }
                 statusListAdapter.setFolderPath(intent.getStringExtra(StatusSavingService.FOLDER_PATH));
 //            statusListAdapter.swapStatus(receivedStatus);
-                if(bottomSelected.equals("pictures")) statusListAdapter.swapStatus(allPicturePaths);
+                if (bottomSelected.equals("pictures"))
+                    statusListAdapter.swapStatus(allPicturePaths);
                 else statusListAdapter.swapStatus(allVideoPaths);
                 mRecyclerView.setAdapter(statusListAdapter);
                 //Setting up the recycler view

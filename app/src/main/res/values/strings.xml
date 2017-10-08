@@ -25,5 +25,6 @@
     <string name="title_pictures">Pictures</string>
     <string name="title_videos">Videos</string>
     <string name="title_notifications">Notifications</string>
+    <string name="action_settings">Settings</string>
 
 </resources>
