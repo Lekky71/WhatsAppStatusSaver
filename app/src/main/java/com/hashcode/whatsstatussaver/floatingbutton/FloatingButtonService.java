@@ -94,6 +94,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         }
     };
     ImageView closeImageView;
+    ImageView exitImageVIew;
     Display rootDisplay;
     RelativeLayout rootRelativeLayout;
     WindowManager.LayoutParams params;
@@ -187,7 +188,14 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
 
     };
 
-    ///////////
+    private View.OnClickListener exitImageClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            Intent closeIntent = new Intent(mContext,FloatingButtonService.class);
+            stopService(closeIntent);
+        }
+    };
+
     public FloatingButtonService() {
     }
 
@@ -209,7 +217,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         expandedButton = mFloatingView.findViewById(R.id.floating_status_head_expanded);
         expandedLayout = mFloatingView.findViewById(R.id.expanded_root_view);
         closeImageView = mFloatingView.findViewById(R.id.floating_close_button);
-
+        exitImageVIew = mFloatingView.findViewById(R.id.exit_image_view);
         shareImageView = mFloatingView.findViewById(R.id.float_share_button);
 
         rootRelativeLayout = mFloatingView.findViewById(R.id.float_overall_layout);
@@ -245,6 +253,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         floatingButton.setOnTouchListener(floatButtonTouchListener);
         expandedButton.setOnTouchListener(expandedListener);
         //Button to save the statuses.
+        exitImageVIew.setOnClickListener(exitImageClickListener);
         FloatingActionButton fab = mFloatingView.findViewById(R.id.fab);
 
         shareImageView.setOnClickListener(new View.OnClickListener() {

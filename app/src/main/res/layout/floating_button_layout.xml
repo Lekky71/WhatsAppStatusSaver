@@ -83,6 +83,15 @@
             </RelativeLayout>
 
             <ImageView
+                android:id="@+id/exit_image_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_toLeftOf="@id/float_share_button"
+                android:src="@drawable/ic_floating_close"
+                android:layout_marginTop="10dp"
+                android:layout_toStartOf="@id/float_share_button" />
+
+            <ImageView
                 android:id="@+id/float_share_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
