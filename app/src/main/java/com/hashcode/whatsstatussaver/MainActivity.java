@@ -184,6 +184,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         });
         swipeRefreshLayout.setOnRefreshListener(this);
         askForContactPermission();
+        startFloating();
 
         Intent receivedIntent = getIntent();
         if (receivedIntent != null) {
@@ -392,7 +393,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                     startActivity(new Intent(this, MainActivity.class));
                     finish();
                 }
-                return;
         }
     }
 
@@ -427,7 +427,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     public void startFloating() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-
+            Toast.makeText(this, "You to allow this app to draw over other apps in order" +
+                    " for the floating circle to work", Toast.LENGTH_LONG).show();
             //If the draw over permission is not available open the settings screen
             //to grant the permission.
             Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,

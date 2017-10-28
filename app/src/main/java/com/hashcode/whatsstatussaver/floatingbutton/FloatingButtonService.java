@@ -282,7 +282,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
                 }
                 else if(numOfSelectedVideos!= 0 &&
                         navigation.getSelectedItemId()==R.id.navigation_videos){
-                    saveAllSelectedStatus(floatAdapter.getSelectedPicturesStatuses());
+                    saveAllSelectedStatus(floatAdapter.getSelectedVidoesStatuses());
                     String message = numOfSelectedVideos == 1 ?  "Video saved" : numOfSelectedVideos + " videos saved";
                     floatAdapter.mVideosCheckStates.clear();
                     Snackbar.make(view, message, Snackbar.LENGTH_SHORT).show();
