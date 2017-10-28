@@ -115,6 +115,8 @@
         android:id="@+id/floating_status_head"
         android:layout_width="70dp"
         android:layout_height="60dp"
+        android:drawingCacheQuality="high"
+        android:scaleType="fitXY"
         android:background="@color/colorPrimaryDark"
         android:src="@mipmap/wass_icon_no_back"
         android:visibility="visible" />
