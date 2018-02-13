@@ -33,7 +33,6 @@ public class FloatAdapter extends RecyclerView.Adapter<FloatAdapter.FloatViewHol
     private ArrayList<String> statusPaths;
     private Context mContext;
     private ArrayList<View> viewArrayList=new ArrayList<>();
-    private String folderPath;
 
     public FloatAdapter(Context context, ArrayList<String> statuses){
         mContext = context;
@@ -58,16 +57,17 @@ public class FloatAdapter extends RecyclerView.Adapter<FloatAdapter.FloatViewHol
     public void onBindViewHolder(FloatViewHolder holder,int pos) {
         final int position = holder.getAdapterPosition();
         final String statusPath = statusPaths.get(pos);
-        final String fullStatusPath = getFolderPath()+"/"+statusPath;
+        //changed fullStatusPath to only statusPath
+
         if(statusPath.endsWith(".jpg")){
             holder.playVideoImageView.setVisibility(View.INVISIBLE);
-            GlideApp.with(mContext).load(fullStatusPath)
+            GlideApp.with(mContext).load(statusPath)
                     .into(holder.statusImageView);
         }
         else if(statusPath.endsWith(".gif")){
             holder.playVideoImageView.setVisibility(View.INVISIBLE);
             GlideApp.with(mContext)
-                    .load(fullStatusPath)
+                    .load(statusPath)
                     .error(Color.GRAY)
                     .placeholder(Color.GRAY)
                     .diskCacheStrategy(DiskCacheStrategy.DATA)
@@ -77,18 +77,18 @@ public class FloatAdapter extends RecyclerView.Adapter<FloatAdapter.FloatViewHol
             holder.playVideoImageView.setVisibility(View.VISIBLE);
             GlideApp.with(mContext)
                     .asBitmap()
-                    .load(Uri.fromFile(new File(fullStatusPath)))
+                    .load(Uri.fromFile(new File(statusPath)))
                     .into(holder.statusImageView);
         }
-        holder.itemView.setTag(fullStatusPath);
+        holder.itemView.setTag(statusPath);
 //mPicturesCheckStates.get(position, false) &&
         if(statusPath.endsWith(".jpg")
-                && selectedPicturesStatuses.contains(fullStatusPath)){
+                && selectedPicturesStatuses.contains(statusPath)){
             holder.itemView.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
         }
         //mVideosCheckStates.get(position,false) &&
         else if(statusPath.endsWith(".mp4") &&
-                selectedVidoesStatuses.contains(fullStatusPath)){
+                selectedVidoesStatuses.contains(statusPath)){
             holder.itemView.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
         }
         else {
@@ -101,7 +101,7 @@ public class FloatAdapter extends RecyclerView.Adapter<FloatAdapter.FloatViewHol
                 Log.i("Selecting image","it works");
 
                 if(mPicturesCheckStates.get(position,false)){
-                    selectedPicturesStatuses.remove(fullStatusPath);
+                    selectedPicturesStatuses.remove(statusPath);
                     Log.e("Selection","It saw it as selected");
                     v.setBackground(null);
                     mPicturesCheckStates.delete(position);
@@ -109,7 +109,7 @@ public class FloatAdapter extends RecyclerView.Adapter<FloatAdapter.FloatViewHol
 
                 }
                 else if(mVideosCheckStates.get(position,false)){
-                    selectedVidoesStatuses.remove(fullStatusPath);
+                    selectedVidoesStatuses.remove(statusPath);
                     Log.e("Selection","It saw it as selected");
                     v.setBackground(null);
                     mVideosCheckStates.delete(position);
@@ -119,10 +119,10 @@ public class FloatAdapter extends RecyclerView.Adapter<FloatAdapter.FloatViewHol
                 else{
                     v.setBackgroundColor(mContext.getResources().getColor(R.color.colorAccent));
                     if(statusPath.endsWith(".jpg")){
-                        selectedPicturesStatuses.add(fullStatusPath);
+                        selectedPicturesStatuses.add(statusPath);
                         mPicturesCheckStates.put(position,true);
                     }else if(statusPath.endsWith(".mp4")){
-                        selectedVidoesStatuses.add(fullStatusPath);
+                        selectedVidoesStatuses.add(statusPath);
                         mVideosCheckStates.put(position,true);
                     }
                     viewArrayList.add(v);
@@ -133,7 +133,7 @@ public class FloatAdapter extends RecyclerView.Adapter<FloatAdapter.FloatViewHol
         holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View view) {
-                statusClickListener.onStatusLongClick(position,fullStatusPath);
+                statusClickListener.onStatusLongClick(position, statusPath);
                 return true;
             }
         });
@@ -168,15 +168,7 @@ public class FloatAdapter extends RecyclerView.Adapter<FloatAdapter.FloatViewHol
     public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
 
     }
-
-    public String getFolderPath() {
-        return folderPath;
-    }
-
-    public void setFolderPath(String folderPath) {
-        this.folderPath = folderPath;
-    }
-
+    
     public class FloatViewHolder extends RecyclerView.ViewHolder {
         ImageView statusImageView ;
         ImageView playVideoImageView;

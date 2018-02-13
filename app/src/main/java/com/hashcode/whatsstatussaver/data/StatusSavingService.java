@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Environment;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import com.hashcode.whatsstatussaver.MainActivity;
 
@@ -29,21 +28,21 @@ public class StatusSavingService extends IntentService {
     private final static String ACTION_FETCH_STATUS = "fetch-status";
     private final static String ACTION_SAVE_STATUS = "save-status";
     private static final String TAG = StatusSavingService.class.getSimpleName();
-    public static String FOLDER_PATH ="folder-path";
+    public static String FOLDER_PATH = "folder-path";
 
-    public StatusSavingService(){
+    public StatusSavingService() {
         super(TAG);
     }
 
-    public static void performSave(Context context, ArrayList<String> paths){
-        Intent intent = new Intent(context,StatusSavingService.class);
+    public static void performSave(Context context, ArrayList<String> paths) {
+        Intent intent = new Intent(context, StatusSavingService.class);
         intent.setAction(ACTION_SAVE_STATUS);
-        intent.putExtra(SELECTED_STATUSES,paths);
+        intent.putExtra(SELECTED_STATUSES, paths);
         context.startService(intent);
     }
 
-    public static void performFetch(Context context){
-        Intent intent = new Intent(context,StatusSavingService.class);
+    public static void performFetch(Context context) {
+        Intent intent = new Intent(context, StatusSavingService.class);
         intent.setAction(ACTION_FETCH_STATUS);
         context.startService(intent);
     }
@@ -51,62 +50,78 @@ public class StatusSavingService extends IntentService {
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
         String action = intent.getAction();
-        if(ACTION_FETCH_STATUS.equals(action)){
+        if (ACTION_FETCH_STATUS.equals(action)) {
             fetchAllStatus();
-        }
-        else if(ACTION_SAVE_STATUS.equals(action)){
+        } else if (ACTION_SAVE_STATUS.equals(action)) {
             ArrayList<String> selectedStatuses = intent.getStringArrayListExtra(SELECTED_STATUSES);
             saveAllSelectedStatus(selectedStatuses);
         }
     }
 
-    private void fetchAllStatus(){
+    private void fetchAllStatus() {
         String foldPath = new StringBuffer().append(Environment.getExternalStorageDirectory()
                 .getAbsolutePath()).append("/WhatsApp/Media/.Statuses/").toString();
 
-        File f = new File(foldPath);
-        if(f.exists()){
-        }
-        else{
+        String businessfoldPath = new StringBuffer().append(Environment.getExternalStorageDirectory()
+                .getAbsolutePath()).append("/WhatsApp Business/Media/.Statuses/").toString();
+
+        File whatsAppFile = new File(foldPath);
+        File whatsAppBusinessFile = new File(businessfoldPath);
+        if (whatsAppFile.exists()) {
+
+        } else if (!whatsAppFile.exists()) {
             Intent broadcastIntent = new Intent();
             broadcastIntent.setAction(MainActivity.FetchStatusReceiver.PROCESS_FETCH);
             broadcastIntent.addCategory(Intent.CATEGORY_DEFAULT);
-            broadcastIntent.putExtra("the-user-has-whatsapp",false);
+            broadcastIntent.putExtra("the-user-has-whatsapp", false);
             sendBroadcast(broadcastIntent);
+
+            if (!whatsAppBusinessFile.exists()) {
+                Intent broadcastBusinessIntent = new Intent();
+                broadcastBusinessIntent.setAction(MainActivity.FetchStatusReceiver.PROCESS_FETCH);
+                broadcastBusinessIntent.addCategory(Intent.CATEGORY_DEFAULT);
+                broadcastBusinessIntent.putExtra("the-user-has-business-whatsapp", false);
+                sendBroadcast(broadcastBusinessIntent);
+                return;
+            }
             return;
         }
 
         Date currentDate = new Date();
         long cTime = currentDate.getTime();
-        File files[] = f.listFiles();
-        Arrays.sort(files, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
-        ArrayList<String> statuses = new ArrayList<>();
-        for(int i=0; i < files.length; i++){
-            long diff =  cTime - files[i].lastModified();
-            if(diff<= (24*60*60*1000)){
-                statuses.add(files[i].getName());
+        File whatsappFiles[] = whatsAppFile.listFiles();
+        File businessFiles[] = whatsAppBusinessFile.listFiles();
+        Arrays.sort(whatsappFiles, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
+
+        Arrays.sort(businessFiles, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
+
+        ArrayList<String> whatsAppStatuses = new ArrayList<>();
+
+        for (int i = 0; i < whatsappFiles.length; i++) {
+            long diff = cTime - whatsappFiles[i].lastModified();
+            if (diff <= (24 * 60 * 60 * 1000)) {
+                whatsAppStatuses.add(foldPath + whatsappFiles[i].getName());
 
             }            //here populate your listview
         }
-        sendFetchBroadCast(statuses,foldPath);
 
+        for (int i = 0; i < businessFiles.length; i++) {
+            long diff = cTime - businessFiles[i].lastModified();
+            if (diff <= (24 * 60 * 60 * 1000)) {
+                whatsAppStatuses.add(businessfoldPath + businessFiles[i].getName());
+
+            }
+        }
+        sendFetchBroadCast(whatsAppStatuses, foldPath);
     }
 
-    private void saveAllSelectedStatus(ArrayList<String> statuses){
-        String fileType = Environment.DIRECTORY_PICTURES;
-        for(String status : statuses){
-            if(status.endsWith(".jpg")){
-                fileType = "Pictures";
-            }else if(status.endsWith(".gif")){
-                fileType ="Gifs";
-            }else if(status.endsWith(".mp4")){
-                fileType="Videos";
-            }
-            String [] splitStatus = status.split("/");
+    private void saveAllSelectedStatus(ArrayList<String> statuses) {
+        for (String status : statuses) {
+            String[] splitStatus = status.split("/");
             String destinationFilename = android.os.Environment.getExternalStorageDirectory().getAbsolutePath()
-                    +"/WhatsAppSaver"+File.separatorChar+splitStatus[splitStatus.length-1];
+                    + "/WhatsAppSaver" + File.separatorChar + splitStatus[splitStatus.length - 1];
             try {
-                copyFile(new File(status),new File(destinationFilename));
+                copyFile(new File(status), new File(destinationFilename));
                 Intent intent = new Intent("android.intent.action.MEDIA_SCANNER_SCAN_FILE");
                 intent.setData(Uri.fromFile(new File(destinationFilename)));
                 sendBroadcast(intent);
@@ -116,15 +131,14 @@ public class StatusSavingService extends IntentService {
         }
     }
 
-    public void sendFetchBroadCast(ArrayList<String> statuses, String folderPath){
+    public void sendFetchBroadCast(ArrayList<String> statuses, String folderPath) {
         Intent broadcastIntent = new Intent();
         broadcastIntent.setAction(MainActivity.FetchStatusReceiver.PROCESS_FETCH);
         broadcastIntent.addCategory(Intent.CATEGORY_DEFAULT);
-        broadcastIntent.putExtra(FOLDER_PATH,folderPath);
-        broadcastIntent.putExtra(FETCHED_STATUSES,statuses);
+        broadcastIntent.putExtra(FOLDER_PATH, folderPath);
+        broadcastIntent.putExtra(FETCHED_STATUSES, statuses);
         sendBroadcast(broadcastIntent);
     }
-
 
     public void copyFile(File file, File file2) throws IOException {
         Throwable th;

@@ -191,7 +191,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             String link = receivedIntent.getStringExtra("STATUS_KEY");
             String shareApp = receivedIntent.getStringExtra("share-app");
             if (link != null) showImagePopup(new Point(0, 2), link);
-            else if(shareApp != null) {
+            else if (shareApp != null) {
                 String mimeType = "text/plain";
                 String title = "Share  WhatsApp Status Saver App";
                 ShareCompat.IntentBuilder.from(this)
@@ -474,9 +474,10 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         @Override
         public void onReceive(Context context, Intent intent) {
             boolean hasWhatsApp = intent.getBooleanExtra("the-user-has-whatsapp", true);
-            if (!hasWhatsApp) {
+            boolean hasBusinessWhatsApp = intent.getBooleanExtra("the-user-has-business-whatsapp", true);
+            if (!hasWhatsApp && !hasBusinessWhatsApp) {
                 Snackbar.make(mRecyclerView, "Sorry, you do not have WhatsApp Installed", Snackbar.LENGTH_LONG).show();
-            } else {
+            } else if (hasWhatsApp) {
                 ArrayList<String> receivedStatus = intent.getStringArrayListExtra(StatusSavingService.FETCHED_STATUSES);
                 allPicturePaths.clear();
                 allVideoPaths.clear();
@@ -487,7 +488,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                         allVideoPaths.add(path);
                     }
                 }
-                statusListAdapter.setFolderPath(intent.getStringExtra(StatusSavingService.FOLDER_PATH));
+//                statusListAdapter.setFolderPath(intent.getStringExtra(StatusSavingService.FOLDER_PATH));
 //            statusListAdapter.swapStatus(receivedStatus);
                 if (bottomSelected.equals("pictures"))
                     statusListAdapter.swapStatus(allPicturePaths);
@@ -495,6 +496,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 mRecyclerView.setAdapter(statusListAdapter);
                 //Setting up the recycler view
                 swipeRefreshLayout.setRefreshing(false);
+            } else if (hasBusinessWhatsApp) {
+                ArrayList<String> receivedBusinessStatus = intent.getStringArrayListExtra(StatusSavingService.FETCHED_STATUSES);
             }
         }
     }

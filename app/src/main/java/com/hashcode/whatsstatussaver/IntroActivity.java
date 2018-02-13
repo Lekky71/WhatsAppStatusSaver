@@ -20,7 +20,7 @@ public class IntroActivity extends AppCompatActivity {
     private static final boolean AUTO_HIDE = true;
     private static final int AUTO_HIDE_DELAY_MILLIS = 3000;
     private static final int UI_ANIMATION_DELAY = 300;
-    private final Handler  mHideHandler = new Handler();
+    private final Handler mHideHandler = new Handler();
     /**
      * Touch listener to use for in-layout UI controls to delay hiding the
      * system UI. This is to prevent the jarring behavior of controls going away
@@ -36,7 +36,7 @@ public class IntroActivity extends AppCompatActivity {
         }
     };
     int[] images = {R.mipmap.view_picture, R.mipmap.view_video, R.mipmap.view_help,
-            R.mipmap.select_videos, R.mipmap.select_pictures,R.mipmap.save_pictures,R.mipmap.save_videos};     // array of images
+            R.mipmap.select_videos, R.mipmap.select_pictures, R.mipmap.save_pictures, R.mipmap.save_videos};     // array of images
     boolean alreadyOpened;
     private View mContentView;
     private final Runnable mHidePart2Runnable = new Runnable() {
@@ -83,22 +83,21 @@ public class IntroActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_intro);
         final SharedPreferences sharedPref = getPreferences(Context.MODE_PRIVATE);
-        alreadyOpened = sharedPref.getBoolean("already-opened",false);
-        if(!alreadyOpened){
+        alreadyOpened = sharedPref.getBoolean("already-opened", false);
+        if (!alreadyOpened) {
             SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putBoolean("already-opened",true);
+            editor.putBoolean("already-opened", true);
             editor.apply();
             Handler handler = new Handler();
             handler.postDelayed(
                     new Runnable() {
                         public void run() {
-                            startActivity(new Intent(IntroActivity.this,MainActivity.class));
+                            startActivity(new Intent(IntroActivity.this, MainActivity.class));
                             finish();
                         }
                     }, 21000L);
-        }
-        else {
-            startActivity(new Intent(IntroActivity.this,MainActivity.class));
+        } else {
+            startActivity(new Intent(IntroActivity.this, MainActivity.class));
             finish();
         }
 
@@ -116,7 +115,7 @@ public class IntroActivity extends AppCompatActivity {
         });
 
 
-        for(int i = 0; i < images.length; i++) {
+        for (int i = 0; i < images.length; i++) {
             // create the object of ImageView
             ImageView imageView = new ImageView(this);
             imageView.setImageResource(images[i]); // set image in ImageView

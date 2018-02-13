@@ -18,23 +18,22 @@ import com.hashcode.whatsstatussaver.floatingbutton.FloatingButtonService
 class SettingsActivity : AppCompatActivity() {
     private val CODE_DRAW_OVER_OTHER_APP_PERMISSION = 2084
 
-    lateinit var floatingSwitch : Switch
+    lateinit var floatingSwitch: Switch
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
         floatingSwitch = findViewById(R.id.allow_float_switch)
         startFloating()
-        val intent = Intent(this@SettingsActivity,FloatingButtonService::class.java)
+        val intent = Intent(this@SettingsActivity, FloatingButtonService::class.java)
         val sharedPref = getSharedPreferences("settings-pref", Context.MODE_PRIVATE)
         val editor = sharedPref.edit()
 
         val preAllowed = sharedPref.getBoolean("floating-allowed", false)
         floatingSwitch.isChecked = preAllowed
         floatingSwitch.setOnCheckedChangeListener({ button, value ->
-            editor.putBoolean("floating-allowed",value)
+            editor.putBoolean("floating-allowed", value)
             editor.apply()
-            if(!value) stopService(intent)
-
+            if (!value) stopService(intent)
             else startService(intent)
         })
 
