@@ -6,7 +6,13 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Environment;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
+import com.coremedia.iso.boxes.Container;
+import com.googlecode.mp4parser.authoring.Movie;
+import com.googlecode.mp4parser.authoring.Track;
+import com.googlecode.mp4parser.authoring.builder.DefaultMp4Builder;
+import com.googlecode.mp4parser.authoring.container.mp4.MovieCreator;
 import com.hashcode.whatsstatussaver.MainActivity;
 
 import java.io.File;
@@ -17,6 +23,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Created by oluwalekefakorede on 03/09/2017.
@@ -27,6 +34,9 @@ public class StatusSavingService extends IntentService {
     public static final String SELECTED_STATUSES = "selected-statuses";
     private final static String ACTION_FETCH_STATUS = "fetch-status";
     private final static String ACTION_SAVE_STATUS = "save-status";
+
+    private final static String ACTION_MERGE_VIDEOS = "merge-videos";
+
     private static final String TAG = StatusSavingService.class.getSimpleName();
     public static String FOLDER_PATH = "folder-path";
 
@@ -47,6 +57,13 @@ public class StatusSavingService extends IntentService {
         context.startService(intent);
     }
 
+    public static void performMerge(Context context, ArrayList<String> paths) {
+        Intent intent = new Intent(context, StatusSavingService.class);
+        intent.setAction(ACTION_MERGE_VIDEOS);
+        intent.putExtra(SELECTED_STATUSES, paths);
+        context.startService(intent);
+    }
+
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
         String action = intent.getAction();
@@ -55,6 +72,35 @@ public class StatusSavingService extends IntentService {
         } else if (ACTION_SAVE_STATUS.equals(action)) {
             ArrayList<String> selectedStatuses = intent.getStringArrayListExtra(SELECTED_STATUSES);
             saveAllSelectedStatus(selectedStatuses);
+        }
+        else if(ACTION_MERGE_VIDEOS.equals(action)){
+            ArrayList<String> selectedStatuses = intent.getStringArrayListExtra(SELECTED_STATUSES);
+            mergeAllVideos(selectedStatuses);
+        }
+    }
+
+    private void mergeAllVideos(ArrayList<String> statuses){
+        String destinationFilename = android.os.Environment.getExternalStorageDirectory().getAbsolutePath()
+                + "/WhatsAppSaver" + File.separatorChar + System.currentTimeMillis()+".mp4";
+
+        try {
+            Movie movie = MovieCreator.build(statuses.get(0));
+            for(int i =1; i< statuses.size(); i++){
+                Log.i(TAG, "Video status ::" + statuses.get(i));
+                String vidPath = statuses.get(i);
+                Movie countVideo = MovieCreator.build(vidPath);
+                List<Track> tracks = countVideo.getTracks();
+                for(int j=0; j< tracks.size();j++){
+                    movie.addTrack(tracks.get(j));
+                }
+            }
+            Container mp4file = new DefaultMp4Builder().build(movie);
+            FileChannel fc = new FileOutputStream(new File(destinationFilename)).getChannel();
+            mp4file.writeContainer(fc);
+            fc.close();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -69,28 +115,26 @@ public class StatusSavingService extends IntentService {
         File whatsAppBusinessFile = new File(businessfoldPath);
         if (whatsAppFile.exists()) {
 
-        } else if (!whatsAppFile.exists()) {
-            Intent broadcastIntent = new Intent();
-            broadcastIntent.setAction(MainActivity.FetchStatusReceiver.PROCESS_FETCH);
-            broadcastIntent.addCategory(Intent.CATEGORY_DEFAULT);
-            broadcastIntent.putExtra("the-user-has-whatsapp", false);
-            sendBroadcast(broadcastIntent);
+        }
+        else if (!whatsAppFile.exists()) {
 
             if (!whatsAppBusinessFile.exists()) {
                 Intent broadcastBusinessIntent = new Intent();
                 broadcastBusinessIntent.setAction(MainActivity.FetchStatusReceiver.PROCESS_FETCH);
                 broadcastBusinessIntent.addCategory(Intent.CATEGORY_DEFAULT);
+                broadcastBusinessIntent.putExtra("the-user-has-whatsapp", false);
                 broadcastBusinessIntent.putExtra("the-user-has-business-whatsapp", false);
                 sendBroadcast(broadcastBusinessIntent);
                 return;
             }
-            return;
         }
 
         Date currentDate = new Date();
         long cTime = currentDate.getTime();
-        File whatsappFiles[] = whatsAppFile.listFiles();
-        File businessFiles[] = whatsAppBusinessFile.listFiles();
+        File whatsappFiles[] = whatsAppFile.listFiles() == null ? new File[0] : whatsAppFile.listFiles() ;
+        File businessFiles[] = whatsAppBusinessFile.listFiles() == null ? new File[0] : whatsAppBusinessFile.listFiles();
+
+
         Arrays.sort(whatsappFiles, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
 
         Arrays.sort(businessFiles, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
@@ -112,6 +156,7 @@ public class StatusSavingService extends IntentService {
 
             }
         }
+        Log.e("Array of statuses", "The number of status found => "+ whatsAppStatuses.size());
         sendFetchBroadCast(whatsAppStatuses, foldPath);
     }
 
