@@ -43,7 +43,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="50dp"
                             android:background="@color/colorPrimary"
-                            app:title="Status Saver for WhatsApp">
+                            app:title="Status Saver 4 WhatsApp">
 
                         </android.support.v7.widget.Toolbar>
 
