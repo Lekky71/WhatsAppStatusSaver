@@ -106,9 +106,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 case R.id.navigation_videos:
                     bottomSelected = "videos";
                     statusListAdapter.swapStatus(allVideoPaths);
-
-
-                    mergeVideoButton.setVisibility(View.VISIBLE);
+                    mergeVideoButton.setVisibility(View.GONE);
                     return true;
             }
             return false;
@@ -224,6 +222,13 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         mergeVideoButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                int numOfSelectedVideos = statusListAdapter.getSelectedVidoesStatuses().size();
+                if(numOfSelectedVideos < 2){
+                    String typeMessage = "You have to select more than one video";
+                    Snackbar.make(navigation, typeMessage, Snackbar.LENGTH_SHORT).show();
+                    return;
+                }
+
                 StatusSavingService.performMerge(mContext,statusListAdapter.getSelectedVidoesStatuses());
                 swipeRefreshLayout.setRefreshing(true);
                 StatusSavingService.performFetch(mContext);

@@ -169,11 +169,13 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
             switch (item.getItemId()) {
                 case R.id.navigation_pictures:
                     floatAdapter.swapStatus(allPicturePaths);
+                    Log.i(TAG, "number of float pictures is :" + allPicturePaths.size());
+
                     bottomSelected = "pictures";
                     return true;
                 case R.id.navigation_videos:
                     bottomSelected = "videos";
-
+                    Log.i(TAG, "number of float videos is :" + allVideoPaths.size());
                     floatAdapter.swapStatus(allVideoPaths);
                     return true;
             }
@@ -433,7 +435,6 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
 
             }
         }
-        Log.e("Array of statuses", "The number of status found => "+ whatsAppStatuses.size());
         return whatsAppStatuses;
     }
 
@@ -522,6 +523,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
 
     public void fetchStatuses() {
         ArrayList<String> receivedStatus = fetchAllStatus();
+
         allPicturePaths.clear();
         allVideoPaths.clear();
         if (receivedStatus != null) {
@@ -533,6 +535,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
                 }
             }
         }
+        Log.e("Array of statuses", "The number of pictures found => "+ allPicturePaths.size()+ " videos => " + allVideoPaths.size());
         String foldPath = Environment.getExternalStorageDirectory()
                 .getAbsolutePath() +
                 "/WhatsApp/Media/.Statuses/";

@@ -3,16 +3,13 @@ package com.hashcode.whatsstatussaver
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Build
-import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.Settings
-import android.widget.CompoundButton
+import android.support.v7.app.AppCompatActivity
 import android.widget.Switch
 import android.widget.Toast
-import com.hashcode.whatsstatussaver.data.StatusSavingService
 import com.hashcode.whatsstatussaver.floatingbutton.FloatingButtonService
 
 class SettingsActivity : AppCompatActivity() {
@@ -58,7 +55,8 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == CODE_DRAW_OVER_OTHER_APP_PERMISSION) {
             //Check if the permission is granted or not.
             if (resultCode == Activity.RESULT_OK) {
