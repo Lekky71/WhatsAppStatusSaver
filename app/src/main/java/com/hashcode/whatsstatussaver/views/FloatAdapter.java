@@ -1,7 +1,6 @@
 package com.hashcode.whatsstatussaver.views;
 
 import android.content.Context;
-import android.graphics.Color;
 import android.net.Uri;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -68,8 +67,8 @@ public class FloatAdapter extends RecyclerView.Adapter<FloatAdapter.FloatViewHol
             holder.playVideoImageView.setVisibility(View.INVISIBLE);
             GlideApp.with(mContext)
                     .load(statusPath)
-                    .error(Color.GRAY)
-                    .placeholder(Color.GRAY)
+                    .error(R.color.colorWhite)
+                    .placeholder(R.color.colorWhite)
                     .diskCacheStrategy(DiskCacheStrategy.DATA)
                     .into(holder.statusImageView);
         }
@@ -196,7 +195,7 @@ public class FloatAdapter extends RecyclerView.Adapter<FloatAdapter.FloatViewHol
     }
 
 
-    public void clearSelectedStatused(){
+    public void clearSelectedStatuses(){
         for (View v:viewArrayList){
             v.setBackground(null);
         }

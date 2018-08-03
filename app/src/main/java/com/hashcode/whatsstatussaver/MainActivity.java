@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     private final static String ACTION_FETCH_STATUS = "fetch-status";
     private final static String ACTION_SAVE_STATUS = "save-status";
     private static final int CODE_DRAW_OVER_OTHER_APP_PERMISSION = 2084;
+    private static final String TAG = MainActivity.class.getSimpleName();
     final int MY_PERMISSION_REQUEST_WRITE_STORAGE = 100;
     Context mContext;
     ArrayList<String> allStatusPaths;
@@ -93,10 +94,12 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 case R.id.navigation_pictures:
                     statusListAdapter.swapStatus(allPicturePaths);
                     bottomSelected = "pictures";
+                    mergeVideoButton.setVisibility(View.GONE);
                     return true;
                 case R.id.navigation_videos:
                     bottomSelected = "videos";
                     statusListAdapter.swapStatus(allVideoPaths);
+                    mergeVideoButton.setVisibility(View.GONE);
                     return true;
             }
             return false;
@@ -106,6 +109,10 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     private int orientation;
 
     SharedPreferences sharedPreferences;
+
+    //The video merge functionality
+    FloatingActionButton mergeVideoButton;
+    //statusListAdapter.getSelectedVidoesStatuses() will be used to collect the paths to all the videos to be merged together.
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,6 +143,10 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         allPicturePaths = new ArrayList<>();
         allVideoPaths = new ArrayList<>();
         mRecyclerView = findViewById(R.id.status_grid_view);
+        mergeVideoButton = findViewById(R.id.fab_merge_videos);
+
+        mergeVideoButton.setVisibility(View.GONE);
+
         RecyclerView.LayoutManager gridLayoutManager = new GridLayoutManager(this, cells);
 
         mRecyclerView.setLayoutManager(gridLayoutManager);
@@ -149,7 +160,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
         //Button to save the statuses.
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab_save);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -201,6 +212,21 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                         .startChooser();
             }
         }
+        mergeVideoButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                int numOfSelectedVideos = statusListAdapter.getSelectedVidoesStatuses().size();
+                if(numOfSelectedVideos < 2){
+                    String typeMessage = "You have to select more than one video";
+                    Snackbar.make(navigation, typeMessage, Snackbar.LENGTH_SHORT).show();
+                    return;
+                }
+
+                StatusSavingService.performMerge(mContext,statusListAdapter.getSelectedVidoesStatuses());
+                swipeRefreshLayout.setRefreshing(true);
+                StatusSavingService.performFetch(mContext);
+            }
+        });
 
     }
 
@@ -249,7 +275,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     @Override
     public void onRefresh() {
         StatusSavingService.performFetch(mContext);
-        statusListAdapter.clearSelectedStatused();
+        statusListAdapter.clearSelectedStatuses();
     }
 
     @Override
@@ -308,7 +334,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         final SimpleExoPlayerView simpleExoPlayerView = dialog.findViewById(R.id.full_status_video_view);
         final SimpleExoPlayer player;
         if (uri.endsWith(".jpg")) {
-            GlideApp.with(context).load(uri).fitCenter().into(statusImage);
+            GlideApp.with(context).load(uri).into(statusImage);
         } else if (uri.endsWith(".mp4")) {
             statusImage.setVisibility(View.GONE);
             simpleExoPlayerView.setVisibility(View.VISIBLE);
@@ -403,7 +429,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     public void onBackPressed() {
         if (statusListAdapter.getSelectedPicturesStatuses().size() == 0 ||
                 statusListAdapter.getSelectedVidoesStatuses().size() == 0) super.onBackPressed();
-        else statusListAdapter.clearSelectedStatused();
+        else statusListAdapter.clearSelectedStatuses();
     }
 
     @Override
@@ -427,7 +453,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     public void startFloating() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-            Toast.makeText(this, "You to allow this app to draw over other apps in order" +
+            Toast.makeText(this, "You have to allow this app to draw over other apps in order" +
                     " for the floating circle to work", Toast.LENGTH_LONG).show();
             //If the draw over permission is not available open the settings screen
             //to grant the permission.
@@ -477,27 +503,29 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
             boolean hasBusinessWhatsApp = intent.getBooleanExtra("the-user-has-business-whatsapp", true);
             if (!hasWhatsApp && !hasBusinessWhatsApp) {
                 Snackbar.make(mRecyclerView, "Sorry, you do not have WhatsApp Installed", Snackbar.LENGTH_LONG).show();
-            } else if (hasWhatsApp) {
+            } else if (hasWhatsApp || hasBusinessWhatsApp) {
                 ArrayList<String> receivedStatus = intent.getStringArrayListExtra(StatusSavingService.FETCHED_STATUSES);
                 allPicturePaths.clear();
                 allVideoPaths.clear();
-                for (String path : receivedStatus) {
-                    if (path.endsWith(".jpg")) {
-                        allPicturePaths.add(path);
-                    } else if (path.endsWith(".mp4")) {
-                        allVideoPaths.add(path);
+                if(receivedStatus != null){
+                    for (String path : receivedStatus) {
+                        if (path.endsWith(".jpg")) {
+                            allPicturePaths.add(path);
+                        } else if (path.endsWith(".mp4")) {
+                            allVideoPaths.add(path);
+                        }
                     }
+                    if (bottomSelected.equals("pictures"))
+                        statusListAdapter.swapStatus(allPicturePaths);
+                    else statusListAdapter.swapStatus(allVideoPaths);
+                    mRecyclerView.setAdapter(statusListAdapter);
+                    //Setting up the recycler view
+                    swipeRefreshLayout.setRefreshing(false);
                 }
-//                statusListAdapter.setFolderPath(intent.getStringExtra(StatusSavingService.FOLDER_PATH));
-//            statusListAdapter.swapStatus(receivedStatus);
-                if (bottomSelected.equals("pictures"))
-                    statusListAdapter.swapStatus(allPicturePaths);
-                else statusListAdapter.swapStatus(allVideoPaths);
-                mRecyclerView.setAdapter(statusListAdapter);
-                //Setting up the recycler view
-                swipeRefreshLayout.setRefreshing(false);
-            } else if (hasBusinessWhatsApp) {
-                ArrayList<String> receivedBusinessStatus = intent.getStringArrayListExtra(StatusSavingService.FETCHED_STATUSES);
+                else {
+                    Snackbar.make(mRecyclerView, "No status at the moment", Snackbar.LENGTH_LONG).show();
+                }
+
             }
         }
     }

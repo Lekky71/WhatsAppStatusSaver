@@ -150,7 +150,6 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
                     if (params.y >= (getScreenHeight() - 300)) {
                         Intent closeIntent = new Intent(mContext, FloatingButtonService.class);
                         stopService(closeIntent);
-                        Log.e("It reaches", "It reaches the end of the screen");
                     }
                     return true;
 
@@ -173,7 +172,6 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
                     return true;
                 case R.id.navigation_videos:
                     bottomSelected = "videos";
-
                     floatAdapter.swapStatus(allVideoPaths);
                     return true;
             }
@@ -211,10 +209,8 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
     public void onCreate() {
         super.onCreate();
         mFloatingView = LayoutInflater.from(this).inflate(R.layout.floating_button_layout, null);
+        mContext = getApplicationContext();
         params = setUpAllViews();
-
-        Log.i(TAG, "Floating service has started");
-
         floatingButton = mFloatingView.findViewById(R.id.floating_status_head);
         expandedButton = mFloatingView.findViewById(R.id.floating_status_head_expanded);
         expandedLayout = mFloatingView.findViewById(R.id.expanded_root_view);
@@ -223,40 +219,32 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         shareImageView = mFloatingView.findViewById(R.id.float_share_button);
 
         rootRelativeLayout = mFloatingView.findViewById(R.id.float_overall_layout);
-        ////
         isButtonClosed = true;
-//        IntentFilter filter = new IntentFilter(FetchStatusReceiver.PROCESS_FETCH);
-//        filter.addCategory(Intent.CATEGORY_DEFAULT);
-//        fetchStatusReceiver = new FetchStatusReceiver();
-//        registerReceiver(fetchStatusReceiver, filter);
-        swipeRefreshLayout = (SwipeRefreshLayout) mFloatingView.findViewById(R.id.refresh_layout);
+        swipeRefreshLayout = mFloatingView.findViewById(R.id.refresh_layout);
         swipeRefreshLayout.setColorSchemeColors(getResources().getColor(R.color.colorAccent),
                 getResources().getColor(R.color.colorPrimary),
                 getResources().getColor(R.color.colorPrimaryDark));
-        Toolbar toolbar = (Toolbar) mFloatingView.findViewById(R.id.toolbar);
-        mContext = getApplicationContext();
+        Toolbar toolbar = mFloatingView.findViewById(R.id.toolbar);
         allStatusPaths = new ArrayList<>();
         selectedStatuses = new ArrayList<>();
         allPicturePaths = new ArrayList<>();
         allVideoPaths = new ArrayList<>();
         mRecyclerView = mFloatingView.findViewById(R.id.status_grid_view);
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 3);
-        gridLayoutManager.setAutoMeasureEnabled(true);
         mRecyclerView.setLayoutManager(gridLayoutManager);
-
-
         floatAdapter = new FloatAdapter(mContext, allStatusPaths);
+        mRecyclerView.setAdapter(floatAdapter);
 
         floatAdapter.setStatusClickListener(this);
 
-        navigation = (BottomNavigationView) mFloatingView.findViewById(R.id.main_bottom_navigation);
+        navigation = mFloatingView.findViewById(R.id.main_bottom_navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
         floatingButton.setOnTouchListener(floatButtonTouchListener);
         expandedButton.setOnTouchListener(expandedListener);
         //Button to save the statuses.
         exitImageVIew.setOnClickListener(exitImageClickListener);
-        FloatingActionButton fab = mFloatingView.findViewById(R.id.fab);
+        FloatingActionButton fab = mFloatingView.findViewById(R.id.fab_save);
 
         shareImageView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -299,7 +287,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
             }
         });
         swipeRefreshLayout.setOnRefreshListener(this);
-        askForContactPermission();
+        askForFloatingPermission();
 
     }
 
@@ -324,8 +312,10 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         params.y = 100;
 
         //Add the view to the window
-        mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        mWindowManager.addView(mFloatingView, params);
+        mWindowManager = (WindowManager) mContext.getSystemService(WINDOW_SERVICE);
+        if (mWindowManager != null) {
+            mWindowManager.addView(mFloatingView, params);
+        }
         return params;
     }
 
@@ -334,7 +324,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
 //        StatusSavingService.performFetch(mContext);
         fetchStatuses();
         //TODO 5
-        floatAdapter.clearSelectedStatused();
+        floatAdapter.clearSelectedStatuses();
     }
 
     @Override
@@ -364,7 +354,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         Receiver for displaying the status after the background fetch.
      */
 
-    public void askForContactPermission() {
+    public void askForFloatingPermission() {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
             int permissionCheck = ContextCompat.checkSelfPermission(FloatingButtonService.this, Manifest.permission.WRITE_EXTERNAL_STORAGE);
             if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
@@ -392,28 +382,26 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         File whatsAppBusinessFile = new File(businessfoldPath);
         if (whatsAppFile.exists()) {
 
-        } else if (!whatsAppFile.exists()) {
-            Intent broadcastIntent = new Intent();
-            broadcastIntent.setAction(MainActivity.FetchStatusReceiver.PROCESS_FETCH);
-            broadcastIntent.addCategory(Intent.CATEGORY_DEFAULT);
-            broadcastIntent.putExtra("the-user-has-whatsapp", false);
-            sendBroadcast(broadcastIntent);
+        }
+        else if (!whatsAppFile.exists()) {
 
             if (!whatsAppBusinessFile.exists()) {
                 Intent broadcastBusinessIntent = new Intent();
                 broadcastBusinessIntent.setAction(MainActivity.FetchStatusReceiver.PROCESS_FETCH);
                 broadcastBusinessIntent.addCategory(Intent.CATEGORY_DEFAULT);
+                broadcastBusinessIntent.putExtra("the-user-has-whatsapp", false);
                 broadcastBusinessIntent.putExtra("the-user-has-business-whatsapp", false);
                 sendBroadcast(broadcastBusinessIntent);
                 return null;
             }
-            return null;
         }
 
         Date currentDate = new Date();
         long cTime = currentDate.getTime();
-        File whatsappFiles[] = whatsAppFile.listFiles();
-        File businessFiles[] = whatsAppBusinessFile.listFiles();
+        File whatsappFiles[] = whatsAppFile.listFiles() == null ? new File[0] : whatsAppFile.listFiles() ;
+        File businessFiles[] = whatsAppBusinessFile.listFiles() == null ? new File[0] : whatsAppBusinessFile.listFiles();
+
+
         Arrays.sort(whatsappFiles, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
 
         Arrays.sort(businessFiles, LastModifiedFileComparator.LASTMODIFIED_REVERSE);
@@ -433,12 +421,9 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
             if (diff <= (24 * 60 * 60 * 1000)) {
                 whatsAppStatuses.add(businessfoldPath + businessFiles[i].getName());
 
-            }            //here populate your listview
+            }
         }
-
         return whatsAppStatuses;
-//        sendFetchBroadCast(whatsAppBusinessStatuses,businessfoldPath);
-
     }
 
     private void saveAllSelectedStatus(ArrayList<String> statuses) {
@@ -526,13 +511,16 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
 
     public void fetchStatuses() {
         ArrayList<String> receivedStatus = fetchAllStatus();
+
         allPicturePaths.clear();
         allVideoPaths.clear();
-        for (String path : receivedStatus) {
-            if (path.endsWith(".jpg")) {
-                allPicturePaths.add(path);
-            } else if (path.endsWith(".mp4")) {
-                allVideoPaths.add(path);
+        if (receivedStatus != null) {
+            for (String path : receivedStatus) {
+                if (path.endsWith(".jpg")) {
+                    allPicturePaths.add(path);
+                } else if (path.endsWith(".mp4")) {
+                    allVideoPaths.add(path);
+                }
             }
         }
         String foldPath = Environment.getExternalStorageDirectory()
