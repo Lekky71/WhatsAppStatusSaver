@@ -326,8 +326,10 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         params.y = 100;
 
         //Add the view to the window
-        mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        mWindowManager.addView(mFloatingView, params);
+        mWindowManager = (WindowManager) mContext.getSystemService(WINDOW_SERVICE);
+        if (mWindowManager != null) {
+            mWindowManager.addView(mFloatingView, params);
+        }
         return params;
     }
 
