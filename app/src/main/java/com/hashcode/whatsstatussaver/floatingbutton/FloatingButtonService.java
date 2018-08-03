@@ -150,7 +150,6 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
                     if (params.y >= (getScreenHeight() - 300)) {
                         Intent closeIntent = new Intent(mContext, FloatingButtonService.class);
                         stopService(closeIntent);
-                        Log.e("It reaches", "It reaches the end of the screen");
                     }
                     return true;
 
@@ -169,13 +168,10 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
             switch (item.getItemId()) {
                 case R.id.navigation_pictures:
                     floatAdapter.swapStatus(allPicturePaths);
-                    Log.i(TAG, "number of float pictures is :" + allPicturePaths.size());
-
                     bottomSelected = "pictures";
                     return true;
                 case R.id.navigation_videos:
                     bottomSelected = "videos";
-                    Log.i(TAG, "number of float videos is :" + allVideoPaths.size());
                     floatAdapter.swapStatus(allVideoPaths);
                     return true;
             }
@@ -213,10 +209,8 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
     public void onCreate() {
         super.onCreate();
         mFloatingView = LayoutInflater.from(this).inflate(R.layout.floating_button_layout, null);
+        mContext = getApplicationContext();
         params = setUpAllViews();
-
-        Log.i(TAG, "Floating service has started");
-
         floatingButton = mFloatingView.findViewById(R.id.floating_status_head);
         expandedButton = mFloatingView.findViewById(R.id.floating_status_head_expanded);
         expandedLayout = mFloatingView.findViewById(R.id.expanded_root_view);
@@ -225,33 +219,25 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         shareImageView = mFloatingView.findViewById(R.id.float_share_button);
 
         rootRelativeLayout = mFloatingView.findViewById(R.id.float_overall_layout);
-        ////
         isButtonClosed = true;
-//        IntentFilter filter = new IntentFilter(FetchStatusReceiver.PROCESS_FETCH);
-//        filter.addCategory(Intent.CATEGORY_DEFAULT);
-//        fetchStatusReceiver = new FetchStatusReceiver();
-//        registerReceiver(fetchStatusReceiver, filter);
-        swipeRefreshLayout = (SwipeRefreshLayout) mFloatingView.findViewById(R.id.refresh_layout);
+        swipeRefreshLayout = mFloatingView.findViewById(R.id.refresh_layout);
         swipeRefreshLayout.setColorSchemeColors(getResources().getColor(R.color.colorAccent),
                 getResources().getColor(R.color.colorPrimary),
                 getResources().getColor(R.color.colorPrimaryDark));
-        Toolbar toolbar = (Toolbar) mFloatingView.findViewById(R.id.toolbar);
-        mContext = getApplicationContext();
+        Toolbar toolbar = mFloatingView.findViewById(R.id.toolbar);
         allStatusPaths = new ArrayList<>();
         selectedStatuses = new ArrayList<>();
         allPicturePaths = new ArrayList<>();
         allVideoPaths = new ArrayList<>();
         mRecyclerView = mFloatingView.findViewById(R.id.status_grid_view);
         GridLayoutManager gridLayoutManager = new GridLayoutManager(this, 3);
-        gridLayoutManager.setAutoMeasureEnabled(true);
         mRecyclerView.setLayoutManager(gridLayoutManager);
-
-
         floatAdapter = new FloatAdapter(mContext, allStatusPaths);
+        mRecyclerView.setAdapter(floatAdapter);
 
         floatAdapter.setStatusClickListener(this);
 
-        navigation = (BottomNavigationView) mFloatingView.findViewById(R.id.main_bottom_navigation);
+        navigation = mFloatingView.findViewById(R.id.main_bottom_navigation);
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener);
 
         floatingButton.setOnTouchListener(floatButtonTouchListener);
@@ -338,7 +324,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
 //        StatusSavingService.performFetch(mContext);
         fetchStatuses();
         //TODO 5
-        floatAdapter.clearSelectedStatused();
+        floatAdapter.clearSelectedStatuses();
     }
 
     @Override
@@ -537,7 +523,6 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
                 }
             }
         }
-        Log.e("Array of statuses", "The number of pictures found => "+ allPicturePaths.size()+ " videos => " + allVideoPaths.size());
         String foldPath = Environment.getExternalStorageDirectory()
                 .getAbsolutePath() +
                 "/WhatsApp/Media/.Statuses/";

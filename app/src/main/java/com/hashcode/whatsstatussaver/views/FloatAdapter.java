@@ -195,7 +195,7 @@ public class FloatAdapter extends RecyclerView.Adapter<FloatAdapter.FloatViewHol
     }
 
 
-    public void clearSelectedStatused(){
+    public void clearSelectedStatuses(){
         for (View v:viewArrayList){
             v.setBackground(null);
         }

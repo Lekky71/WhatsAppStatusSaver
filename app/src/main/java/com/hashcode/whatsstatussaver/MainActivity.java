@@ -29,7 +29,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -39,7 +38,6 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.coremedia.iso.boxes.Container;
 import com.google.android.exoplayer2.DefaultLoadControl;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.LoadControl;
@@ -57,16 +55,11 @@ import com.google.android.exoplayer2.upstream.BandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
-import com.googlecode.mp4parser.FileDataSourceImpl;
-import com.googlecode.mp4parser.authoring.Movie;
-import com.googlecode.mp4parser.authoring.builder.DefaultMp4Builder;
-import com.googlecode.mp4parser.authoring.tracks.H263TrackImpl;
 import com.hashcode.whatsstatussaver.data.StatusSavingService;
 import com.hashcode.whatsstatussaver.floatingbutton.FloatingButtonService;
 import com.hashcode.whatsstatussaver.views.FloatAdapter;
 import com.hashcode.whatsstatussaver.views.GlideApp;
 
-import java.io.IOException;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener,
@@ -282,7 +275,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     @Override
     public void onRefresh() {
         StatusSavingService.performFetch(mContext);
-        statusListAdapter.clearSelectedStatused();
+        statusListAdapter.clearSelectedStatuses();
     }
 
     @Override
@@ -436,7 +429,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     public void onBackPressed() {
         if (statusListAdapter.getSelectedPicturesStatuses().size() == 0 ||
                 statusListAdapter.getSelectedVidoesStatuses().size() == 0) super.onBackPressed();
-        else statusListAdapter.clearSelectedStatused();
+        else statusListAdapter.clearSelectedStatuses();
     }
 
     @Override
