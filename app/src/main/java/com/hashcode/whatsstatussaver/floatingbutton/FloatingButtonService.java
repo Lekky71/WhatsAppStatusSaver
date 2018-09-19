@@ -208,7 +208,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
     @Override
     public void onCreate() {
         super.onCreate();
-        mFloatingView = LayoutInflater.from(this).inflate(R.layout.floating_button_layout, null);
+        mFloatingView = LayoutInflater.from(getApplicationContext()).inflate(R.layout.floating_button_layout, null);
         mContext = getApplicationContext();
         params = setUpAllViews();
         floatingButton = mFloatingView.findViewById(R.id.floating_status_head);
@@ -312,9 +312,13 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         params.y = 100;
 
         //Add the view to the window
-        mWindowManager = (WindowManager) mContext.getSystemService(WINDOW_SERVICE);
-        if (mWindowManager != null) {
-            mWindowManager.addView(mFloatingView, params);
+        mWindowManager = (WindowManager) FloatingButtonService.this.getSystemService(WINDOW_SERVICE);
+        try {
+            if (mWindowManager != null) {
+                mWindowManager.addView(mFloatingView, params);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
         }
         return params;
     }

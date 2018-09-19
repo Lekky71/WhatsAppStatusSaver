@@ -196,7 +196,6 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         swipeRefreshLayout.setOnRefreshListener(this);
         askForContactPermission();
         startFloating();
-
         Intent receivedIntent = getIntent();
         if (receivedIntent != null) {
             String link = receivedIntent.getStringExtra("STATUS_KEY");
