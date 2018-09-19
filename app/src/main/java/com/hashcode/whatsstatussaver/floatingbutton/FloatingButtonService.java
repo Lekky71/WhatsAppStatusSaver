@@ -11,6 +11,7 @@ import android.content.res.Resources;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.os.IBinder;
 import android.support.annotation.NonNull;
@@ -303,8 +304,10 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_PHONE,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.O ?
+                        WindowManager.LayoutParams.TYPE_SYSTEM_OVERLAY :
+                        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
                 PixelFormat.TRANSLUCENT);
 
         params.gravity = Gravity.TOP | Gravity.START;        //Initially view will be added to top-left corner
@@ -312,7 +315,7 @@ public class FloatingButtonService extends Service implements SwipeRefreshLayout
         params.y = 100;
 
         //Add the view to the window
-        mWindowManager = (WindowManager) FloatingButtonService.this.getSystemService(WINDOW_SERVICE);
+        mWindowManager = (WindowManager) getApplicationContext().getSystemService(WINDOW_SERVICE);
         try {
             if (mWindowManager != null) {
                 mWindowManager.addView(mFloatingView, params);
